@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Modificar Usuario{% endblock %}
+{% include "header.html" %}
+
+{% block content %}
+<div class="bg-primary min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white p-6 rounded-xl shadow-lg">
+    <h2 class="text-3xl font-semibold text-center text-zinc-950 mb-6 mt-16">
+      Modificar Usuario
+    </h2>
+    <form method="POST" class="space-y-3 w-full">
+      {{ form.hidden_tag() }}
+
+      <label for="nombreUsuario" class="block text-sm font-medium text-zinc-950">
+        Usuario
+      </label>
+      {{ form.nombreUsuario() }}
+
+      <label for="nombre" class="block text-sm font-medium text-zinc-950">
+        Nombre
+      </label>
+      {{ form.nombre() }}
+
+      <label for="apellidoPaterno" class="block text-sm font-medium text-zinc-950">
+        Apellido Paterno
+      </label>
+      {{ form.apellidoPaterno() }}
+
+      <label for="apellidoMaterno" class="block text-sm font-medium text-zinc-950">
+        Apellido Materno
+      </label>
+      {{ form.apellidoMaterno() }}
+
+      <label for="email" class="block text-sm font-medium text-zinc-950">
+        Email
+      </label>
+      {{ form.email() }}
+
+      <label for="idRol" class="block text-sm font-medium text-zinc-950">
+        Rol
+      </label>
+      {{ form.idRol() }}
+
+      <label for="contrasenia" class="block text-sm font-medium text-zinc-950">
+        Contraseña
+      </label>
+      {{ form.contrasenia() }}
+
+      <label for="confirm_contrasenia" class="block text-sm font-medium text-zinc-950">
+        Confirmar Contraseña
+      </label>
+      {{ form.confirm_contrasenia() }}
+
+      <label for="estatus" class="block text-sm font-medium text-zinc-950">
+        Estatus
+      </label>
+      {{ form.estatus() }}
+
+      <label for="estatus_bloqueo" class="block text-sm font-medium text-zinc-950">
+        Estatus de Bloqueo
+      </label>
+      {{ form.estatus_bloqueo() }}
+
+      <button
+        type="submit"
+        class="w-full bg-black text-white py-2 mt-3 rounded-lg hover:bg-pink-700 transition duration-300"
+      >
+        Modificar Usuario
+      </button>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-4">
+          {% for category, message in messages %}
+            <div class="bg-pink-100 text-pink-600 border-pink-300 p-4 rounded-lg mb-4">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %} {% block title %}Mermas de Galletas - Don Galletto{% endblock %} {% block content %}
+{% include "header2.html" %}
+
+<div class="bg-secondary min-h-screen flex flex-col items-center justify-center p-content text-dark-gray">
+    <h1 class="text-center text-3xl p-mermas-title font-bold ">Mermas de Galletas</h1>
+
+    <!-- Contenedor principal -->
+    <div class="flex w-full max-w-6xl gap-8 w-1/3">
+        <!-- Columna izquierda: Galletas disponibles -->
+
+        <ul class="grid grid-cols-2  h-50 gap-4">
+            {% for galleta in galletas_disponibles %}
+            <li>
+                <form method="POST" action="{{ url_for('mermas.agregar_galleta_list') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="galleta_id" value="{{ galleta.id }}">
+                    <input type="hidden" name="current_selected" value="{{ galletas_seleccionadas_ids }}">
+                    <button type="submit" name="action" value="add_galleta" class="rounded-lg object-contain  h-full bg-primary p-4 rounded-lg text-dark-gray font-bold rounded-lg border-2 border-dark-gray flex flex-col items-center justify-center hover:bg-dark-gray">
+                        <img src="{{ galleta.imagen }}" 
+                        alt="{{ galleta.nombre }}" 
+                        class="h-img object-contain rounded-lg"
+                        onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'">
+                   
+                                <span class="font-bold text-center text-sm">{{ galleta.nombre }}</span>
+                                <span class="text-xs mt-1">Stock: {{ galleta.stock }}</span>
+                    </button>
+                </form>
+            </li>
+            {% else %}
+            <li class="col-span-2 text-center py-4">
+                <p class="text-gray-600">No hay galletas disponibles</p>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="w-2/3"></div>
+        <!-- Columna derecha -->
+        <div class="w-3/3 bg-tertiary overflow-x-auto rounded-lg border-2 border-dark-gray shadow-lg">
+            <!-- Sección superior: Formulario de mermas -->
+            <form method="POST" action="{{ url_for('mermas.mostrar_galletas_merma') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="galletas_seleccionadas" value="{{ galletas_seleccionadas_ids }}">
+                <div class="rounded-lg shadow-lg mb-6">
+                    <h2 class="py-4 bg-primary text-center text-xl font-bold rounded-lg border-1 border-dark-gray">Registrar Merma de Galletas</h2>
+
+                    <div class="p-4">
+                        {% if galletas_seleccionadas %}
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                        <table class="w-full">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="p-2 text-left">Galleta</th>
+                                    <th class="p-2 text-left">Cantidad</th>
+                                    <th class="p-2 text-left">Tipo de Merma</th>
+                                    <th class="p-2 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for galleta in galletas_seleccionadas %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="p-2 ">
+                                        <span class="font-medium ml-2">{{ galleta.nombre }}</span>
+                                    </td>
+                                    <td class="p-2">
+                                        <input type="number" name="cantidad_{{ galleta.id }}" class="w-20 p-2 rounded-lg border-1 border-dark-gray" min="0" value="0" required>
+                                    </td>
+                                    <td class="p-2">
+                                        <select name="tipo_merma_{{ galleta.id }}" class="w-full p-2 rounded-lg border-1 border-dark-gray">
+                                            <option value="quemada">Quemada</option>
+                                            <option value="desperfecto">Desperfecto</option>
+                                            <option value="caducado">Caducado</option>
+                                            <option value="error_produccion">Error en Producción</option>
+                                        </select>
+                                    </td>
+                                    <td class="p-2 text-center">
+                                        <form method="POST" action="{{ url_for('mermas.eliminar_galleta_list') }}" class="inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="galleta_id" value="{{ galleta.id }}">
+                                            <button name="action" value="eliminar_merma" class="px-5 py-3 bg-red rounded-lg border-2 border-dark-gray font-bold rounded-lg hover:bg-dark-gray">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <div class="mt-4 flex justify-between">
+                            <button type="submit" name="action" value="registrar_merma" class="px-5 py-3 bg-primary text-dark-gray font-bold rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                                Registrar Merma
+                            </button>
+                            <button type="submit" name="action" value="limpiar_seleccion" class="px-5 py-3 bg-primary text-dark-gray font-bold rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                                Limpiar Selección
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="text-center p-8">
+                            <h3 class="text-lg font-medium">No hay galletas seleccionadas</h3>
+                            <p class="text-gray-600">Selecciona galletas de la lista disponible</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+            <!-- Sección inferior: Historial de mermas -->
+            <div class="bg-white rounded-lg shadow-lg">
+                <h2 class="py-4 bg-primary text-center text-xl font-bold rounded-lg border-1 border-dark-gray">Últimas Mermas Registradas</h2>
+                <div class="p-4 bg-tertiary">
+                    {% if historial_mermas %}
+                    <table class="w-full">
+                        <thead class="">
+                            <tr>
+                                <th class="p-2 text-left">Fecha</th>
+                                <th class="p-2 text-left">Galleta</th>
+                                <th class="p-2 text-left">Tipo</th>
+                                <th class="p-2 text-left">Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in historial_mermas %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-2">{{ item.registro.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td class="p-2">
+                                    {{ item.nombre_galleta if item.nombre_galleta else 'N/A' }}
+                                </td>
+                                <td class="p-2">
+                                    {{ item.nombre_receta if item.nombre_receta else 'N/A' }}
+                                </td>
+                                <td class="p-2">{{ item.registro.cantidad }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="text-center p-8">
+                        <p class="text-gray-600">No hay registros de mermas recientes</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

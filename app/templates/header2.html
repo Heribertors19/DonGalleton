@@ -1,0 +1,119 @@
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <div class="flex justify-between items-center h-full px-4">
+      <!-- Contenedor principal con posición relativa -->
+      <div class="relative">
+          <!-- Botón del menú de hamburguesa -->
+          <button id="menu-toggle" class="flex items-center justify-center text-4xl rounded-2xl z-30 relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="size-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+
+          <!-- Menú lateral (inicia oculto con -translate-x-full) -->
+          <div id="sidebar" class=" w-2/6  hidden fixed top-0 left-0 w-64 h-full bg-tertiary shadow-lg transform -translate-x-full transition-transform duration-300 z-40 border-2 rounded-lg">
+              <div class="relative p-10">
+                  <!-- Botón de cerrar -->
+                  <button id="close-sidebar" class="absolute top-2 right-2 bg-red rounded-full border-2">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width: 40px; height: 40px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+                  <h2 class="py-4 text-center text-3xl font-bold">Menú</h2>
+                  <ul class="space-y-2">
+                      <li><a href="/inicio" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Dashboard</a></li>
+                      <li><a href="/produccion/ordenes" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Producción</a></li>
+                      <li><a href="/stock/galletas#" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Inventario de galletas</a></li>
+                      <li><a href="/vistaStock" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Stock Insumos</a></li>
+                      <li><a href="/reporteInsum" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Insumos</a></li>
+                      <li><a href="/punto_venta" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Punto de venta</a></li>
+                      <li><a href="/mermas" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Mermas</a></li>
+                      <li><a href="/proveedores" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">proveedores</a></li>
+                  </ul>
+              </div>
+          </div>
+
+          <!-- Capa oscura (overlay), inicia oculta -->
+          <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30"></div>
+
+          <!-- Estilos -->
+          <style>
+              #sidebar {
+                  transition: transform 0.3s ease-in-out;
+              }
+              
+              #overlay.show {
+                  backdrop-filter: blur(4px);
+              }
+              
+              body.menu-open {
+                  overflow: hidden;
+              }
+          </style>
+
+          <!-- Script al final para asegurar funcionamiento -->
+          <script>
+              const toggleButton = document.getElementById('menu-toggle');
+              const sidebar = document.getElementById('sidebar');
+              const overlay = document.getElementById('overlay');
+              const closeSidebarButton = document.getElementById('close-sidebar');
+
+              function openMenu() {
+                  sidebar.classList.remove('hidden');
+                  requestAnimationFrame(() => {
+                      sidebar.classList.remove('-translate-x-full');
+                  });
+                  overlay.classList.remove('hidden');
+                  overlay.classList.add('show');
+                  document.body.classList.add('menu-open');
+              }
+
+              function closeMenu() {
+                  sidebar.classList.add('-translate-x-full');
+                  overlay.classList.add('hidden');
+                  overlay.classList.remove('show');
+                  document.body.classList.remove('menu-open');
+
+                  // Después de la animación, ocultamos completamente
+                  setTimeout(() => {
+                      sidebar.classList.add('hidden');
+                  }, 300);
+              }
+
+              toggleButton.addEventListener('click', () => {
+                  if (sidebar.classList.contains('hidden') || sidebar.classList.contains('-translate-x-full')) {
+                      openMenu();
+                  } else {
+                      closeMenu();
+                  }
+              });
+              overlay.addEventListener('click', closeMenu);
+              closeSidebarButton.addEventListener('click', closeMenu); // <- Esto hace que funcione tu botón de cerrar
+          </script>
+      </div>
+      <!-- Título centrado -->
+      <div class="flex items-center justify-center">
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <h1 class="text-center text-3xl p-3 font-bold">MR. COOKIES</h1>
+    </div>
+      <!-- Contenido alineado a la derecha -->
+      <div class="flex items-center">
+          <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+          <p class="p-2">{{ current_user.nombre }}</p>
+      </div>
+      <!-- Última sesión -->
+      {% if current_user.ultima_sesion %}
+      <p>Último inicio de sesión: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+      {% else %}
+      <p>Este es tu primer inicio de sesión.</p>
+      {% endif %}
+      <form action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="bg-dark-gray text-white font-bold rounded-lg p-2">
+            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+        </button>
+      </form>
+  </div>
+</header>

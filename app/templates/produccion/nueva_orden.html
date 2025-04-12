@@ -1,0 +1,53 @@
+{% extends "base.html" %} {% block title %}Produccion{% endblock %} {% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+    </div>
+</header>
+
+<div class="p-content mt-20">
+    <h2>Nueva Orden de Producción</h2>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <!-- Formulario -->
+    <form method="POST" action="{{ url_for('produccion.crear_orden') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-group">
+            <label>Tipo de Galleta:</label>
+            <select name="id_tipo_galleta" class="form-control">
+                {% for tipo in tipos_galleta %}
+                <option value="{{ tipo.idTipoGalleta }}" 
+                        {% if tipo_seleccionado and tipo.idTipoGalleta == tipo_seleccionado.idTipoGalleta %}selected{% endif %}>
+                    {{ tipo.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Responsable:</label>
+            <input type="text" name="responsable" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Iniciar Producción</button>
+    </form>
+</div>
+{% endblock %}

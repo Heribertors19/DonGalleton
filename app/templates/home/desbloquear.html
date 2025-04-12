@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Desbloquear Usuarios{% endblock %}
+
+{% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center px-6 py-3">
+        <!-- Botón del menú de hamburguesa -->
+        <button class="text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <h1 class="text-3xl font-bold text-white">Mr. Cookie</h1>
+
+        <!-- Perfil de usuario -->
+        <div class="flex items-center space-x-3">
+            <img src="../static/img/profile-user.png" alt="User" class="h-10 w-10 rounded-full">
+            <p class="text-white">{{ current_user.nombre }}</p>
+        </div>
+
+        <!-- Última sesión y logout -->
+        <div class="flex items-center space-x-4">
+            {% if current_user.ultima_sesion %}
+                <p class="text-white text-sm">Último inicio: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+            {% else %}
+                <p class="text-white text-sm">Primer inicio de sesión.</p>
+            {% endif %}
+            <a href="{{ url_for('auth.logout') }}" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md">Cerrar Sesión</a>
+        </div>
+    </div>
+</header>
+
+<!-- Aquí se ajusta la posición vertical -->
+<div class="min-h-screen flex items-start justify-center mt-20"> <!-- mt-20 ajusta el margen superior -->
+    <div class="bg-tertiary shadow-lg rounded-xl p-4 max-w-4xl w-full">
+        <h2 class="text-2xl font-semibold mb-4 text-gray-800">Usuarios Bloqueados</h2>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <p class="text-sm text-red-500">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Tabla de Usuarios -->
+        <table class="table-auto w-full border border-gray-300 rounded-md">
+            <thead>
+                <tr class="bg-primary text-black">
+                    <th class="px-4 py-2">Nombre de Usuario</th>
+                    <th class="px-4 py-2">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario in usuarios %}
+                <tr class="border-t bg-gray-50 even:bg-gray-100 text-center">
+                    <td class="px-4 py-3">{{ usuario.nombreUsuario }}</td>
+                    <td class="px-4 py-3">
+                        <form action="{{ url_for('auth.desbloquear') }}" method="POST">
+                            <input type="hidden" name="nombre_usuario" value="{{ usuario.nombreUsuario }}">
+                            <button type="submit" class="bg-primary hover:bg-pink-600 text-black py-2 px-4 rounded-lg">Desbloquear</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

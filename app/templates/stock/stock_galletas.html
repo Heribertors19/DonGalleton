@@ -1,0 +1,75 @@
+{% extends 'base.html' %} {% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+    </div>
+</header>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Gestión de Stock</h2>
+
+    <!-- Galletas que necesitan producción -->
+    {% if necesita_produccion %}
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-white">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>Necesitan Producción</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for galleta in necesita_produccion %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        <img src="{{ galleta.imagen }}" class="card-img-top p-3" alt="{{ galleta.nombre }}" style="height: 180px; object-fit: contain;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ galleta.nombre }}</h5>
+                            <div class="alert alert-danger py-2">
+                                <i class="fas fa-robot me-2"></i>Producir: {{ galleta.diferencia }} unidades
+                            </div>
+                            <p class="mb-1"><small>Actual: {{ galleta.stock_actual }}</small></p>
+                            <p class="mb-1"><small>Mínimo: {{ galleta.stock_minimo }}</small></p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Galletas con stock suficiente -->
+    <div class="card border-success">
+        <div class="card-header bg-success text-white">
+            <h4><i class="fas fa-check-circle me-2"></i>Stock Suficiente</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for galleta in stock_suficiente %}
+                <div class="col-md-2 mb-3">
+                    <div class="card h-100">
+                        <img src="{{ galleta.imagen }}" class="card-img-top p-2" alt="{{ galleta.nombre }}" style="height: 100px; object-fit: contain;">
+                        <div class="card-body p-2">
+                            <h6 class="card-title text-center">{{ galleta.nombre }}</h6>
+                            <p class="text-center mb-0"><small>{{ galleta.stock_actual }} unidades</small></p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Verificación{% endblock %}
+
+{% block content %}
+<div class="bg-primary min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white p-6 rounded-xl shadow-lg">
+    <h2 class="text-3xl font-semibold text-center text-zinc-950 mb-6 mt-16">
+      Verificación de Código
+    </h2>
+    <form method="POST" class="space-y-4 w-full">
+      {{ form.hidden_tag() }}
+
+      <label for="codigo" class="block text-sm font-medium text-zinc-950">
+        Ingresa el código que recibiste en tu correo:
+      </label>
+      {{ form.codigo(class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+
+      <button
+        type="submit"
+        class="w-full bg-black text-white py-2 mt-3 rounded-lg hover:bg-pink-700 transition duration-300"
+      >
+        Verificar
+      </button>
+
+      <p class="text-zinc-950 text-center mt-4">
+        <a href="{{ url_for('auth.login') }}" class="underline text-sm text-blue-500 hover:text-blue-700">
+          Volver al inicio de sesión
+        </a>
+      </p>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-4">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} bg-pink-100 text-pink-600 border-pink-300 p-4 rounded-lg mb-4">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endblock %}

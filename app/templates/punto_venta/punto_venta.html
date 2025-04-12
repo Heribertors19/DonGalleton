@@ -1,0 +1,476 @@
+{% extends "base.html" %} {% block title %}Punto de venta{% endblock %} {% block content %}
+{% include "header2.html" %}
+<!--Contenedor principal -->
+<main class="mt-20 p-content">
+    <!-- Sección principal -->
+
+    <div class="bg-tertiary rounded-lg border-2 border-dark-gray">
+        <h1 class="py-4 text-center text-3xl font-bold bg-tertiary rounded-lg ">Punto de Venta</h1>
+        <!-- Botón flotante para abrir lista (añade esto al final de tu main) -->
+        <button id="abrir-lista-btn" class="fixed right-4 bottom-4 text-white p-3 bg-primary rounded-full shadow-lg z-30 hover:bg-blue-700 transition-all border-2 border-dark-gray">
+        <svg id="toggle-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <!-- Icono de carrito (visible cuando lista está cerrada) -->
+            <path id="cart-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <span id="cart-counter" class="absolute p-1 -top-2 -right-2 bg-red text-white text-xs font-bold rounded-full h-6 w-5 flex items-center justify-center">
+            {{ detalles_venta|length if detalles_venta else 0 }}
+        </span>
+    </button>
+
+
+        <!-- Estado de venta -->
+        <div class="border-b-2 rounded-lg border-dark-gray p-4 bg-blue-50">
+            {% if venta_activa %}
+            <div class="flex justify-between items-center">
+                <p class="font-semibold text-dark-gray hidden">Venta #{{ venta_activa.idVenta }} - {{ detalles_venta|length }} productos</p>
+                <p class="font-bold text-dark-gray hidden">Total: ${{ "%.2f"|format(subtotal) }}</p>
+            </div>
+            {% else %}
+            <p class="text-center font-semibold hidden">No hay venta activa</p>
+            {% endif %}
+        </div>
+
+        <!-- Filtros -->
+        <div class="border-b-2 rounded-lg border-dark-gray p-4">
+            <form method="POST" action="{{ url_for('punto_venta.interfaz_venta') }}" class="flex items-center justify-center gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input class="border-2 border-dark-gray rounded-lg w-search p-2" type="text" name="busqueda" placeholder="Buscar galleta..." value="{{ busqueda }}">
+                <button type="submit" class="w-46 bg-primary text-dark-gray border-2 rounded-lg p-2 hover:bg-dark-gray">
+                    Buscar
+                </button>
+            </form>
+        </div>
+
+        <!-- Acciones -->
+        <div class="p-4 flex gap-4 justify-center">
+            {% if not venta_activa %}
+            <form method="POST" action="{{ url_for('punto_venta.iniciar_venta') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="w-full  bg-green hover:bg-dark-gray text-dark-gray p-2 rounded-lg border-2 border-dark-gray ">
+                    Iniciar Venta
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('punto_venta.corte_caja') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="w-full  bg-yellow hover:bg-dark-gray text-dark-gray p-2 rounded-lg border-2 border-dark-gray ">
+                    Realizar un corte de caja
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('punto_venta.cancelar_venta') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="venta_id" value="{{ venta_activa.idVenta }}">
+                <button type="submit" class="font-bold p-4 text-dark-gray  bg-red rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                    Cancelar Venta
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('punto_venta.corte_caja') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="font-bold p-4 text-dark-gray  bg-yellow rounded-lg border-2 border-dark-gray hover:bg-dark-gray ">
+                    Realizar un corte de caja
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <!-- Galletas disponibles -->
+        <ul class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
+            {% for galleta in galletas if galletas and galleta %}
+            <li>
+                <div class="w-full flex flex-col rounded-lg border-2 transition-shadow overflow-hidden hover:bg-dark-gray">
+                    <div class="relative w-full h-[120px] md:h-[150px] lg:h-[180px] bg-gray-50">
+                        <div class="inset-0 flex items-center justify-center p-2">
+                            <img src="{{ galleta.imagen }}" class="max-h-full rounded-lg max-w-full object-contain h-img" onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'" alt="{{ galleta.nombre }}">
+                        </div>
+                        <div class="z-30 absolute top-2 right-2 w-5 h-5 rounded-full border-2
+                            {% if galleta.stock < 100 %}bg-red
+                            {% elif galleta.stock < 150 %}bg-yellow
+                            {% else %}bg-green{% endif %}">
+                        </div>
+                    </div>
+
+                    <div class="p-3 text-center border-t border-gray-100">
+                        <h3 class="font-medium text-gray-800 truncate">{{ galleta.nombre }}</h3>
+                        <div class="flex justify-between mt-2 text-sm">
+                            <span class="{% if galleta.stock < 100 %}text-red-600 font-semibold{% endif %}">
+                                Stock: {{ galleta.stock }}
+                            </span>
+                            <span class="text-gray-700">${{ "%.2f"|format(galleta.precio) }}</span>
+                        </div>
+
+                        {% if venta_activa %}
+                        <label for="modal-toggle-{{ galleta.id }}" class="block w-full mt-3 bg-primary text-dark-gray hover:bg-dark-gray text-center py-1.5 rounded-lg border-2 cursor-pointer transition">
+        Agregar
+    </label> {% endif %}
+                    </div>
+                </div>
+                <!-- Modal para esta galleta específica -->
+                <!-- Modal para cada galleta -->
+                <input type="checkbox" id="modal-toggle-{{ galleta.id }}" class="modal-toggle" style="display: none">
+
+                <div class="modal-container ">
+                    <div class="modal-content bg-tertiary rounded-lg border-2 p-6 w-full max-w-md mx-auto mt-20">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-dark-gray">{{ galleta.nombre }}</h3>
+                            <button type="button" onclick="document.getElementById('modal-toggle-{{ galleta.id }}').checked = false;" class="bg-red hover:bg-dark-gray text-dark-gray rounded-lg border-2 p-1 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                        </div>
+                        <form id="form-agregar-{{ galleta.id }}-{{ loop.index }}" method="POST" action="{{ url_for('punto_venta.agregar_producto') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="producto_id" value="{{ galleta.id }}">
+                            <input type="hidden" name="peso_individual" value="{{ galleta.peso }}">
+                            <input type="hidden" name="precio_unitario" value="{{ galleta.precio }}">
+
+                            <!-- Tipo de Venta -->
+                            <div class="mb-4">
+                                <label class="block font-bold text-dark-gray">Tipo de venta:</label>
+                                <select name="tipo_venta" class="w-full p-2 border rounded-lg border-2" required>
+                    <option value="pieza">Por pieza</option>
+                    <option value="gramo">Por gramos</option>
+                    <option value="kilo">Por kilogramos</option>
+                    <option value="paquete_1kg">Paquete 1 kg</option>
+                    <option value="paquete_700gr">Paquete 700 gr</option>
+                </select>
+                            </div>
+
+                            <!-- Cantidad -->
+                            <div class="mb-4">
+                                <label class="block font-bold text-dark-gray">Cantidad:</label>
+                                <input type="number" name="cantidad" min="1" step="1" class="w-full p-2 border rounded-lg border-2" required>
+                            </div>
+
+                            <!-- Beneficencia -->
+                            <div class="mb-4">
+                                <label class="flex items-center">
+                    <input type="checkbox" name="es_beneficencia" class="mr-2 bg-primary">
+                    <span>Es para beneficencia (20% descuento)</span>
+                </label>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="flex justify-end gap-4">
+                                <label for="modal-toggle-{{ galleta.id}}" class="px-4 py-2 bg-red rounded-lg border-2 border-dark-gray hover:bg-dark-gray cursor-pointer">
+                    Cancelar
+                </label>
+                                <button type="submit" class="px-4 py-2 bg-primary text-dark-gray rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                    Agregar
+                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Lista de productos agregados (lateral) -->
+    <div id="lista-productos" class="fixed right-4 top-20 bottom-0 w-50 bg-tertiary rounded-lg border-2 border-dark-gray hidden z-50">
+        <div class="p-4 border-b border-gray-200 sticky top-0 bg-tertiary z-10">
+            <div class="flex justify-between items-center ">
+                <h3 class="text-lg font-bold">Productos Agregados</h3>
+                <button id="cerrar-lista-btn" class="bg-red hover:bg-dark-gray rounded-lg border-2 ">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+            </div>
+        </div>
+
+        <div id="contenido-lista" class="p-4 overflow-y-auto bg-tertiary">
+            {% if detalles_venta %}
+            <ul id="items-lista" class="divide-y divide-gray-200">
+                {% for detalle in detalles_venta %} {% set galleta = detalle.tipo_galleta %}
+                <li class="py-3">
+                    <div class="flex justify-between items-start">
+                        <div class="">
+                            <span class="font-medium block truncate">{{ galleta.nombre }}</span>
+                            <span class="text-sm text-gray-500">
+                            {{ formatear_detalle(detalle) }}
+                            {% if detalle.costoActual < galleta.costo %}
+                            <span class="text-xs bg-yellow-100 text-yellow-800 px-1 ml-1 rounded">Beneficencia</span> {% endif %}
+                            </span>
+                        </div>
+                        <div class="w-1/3 text-right">
+                            <span class="font-medium block">${{ "%.2f"|format(detalle.cantidad * detalle.costoActual) }}</span>
+
+                            <!-- Formulario para eliminar -->
+                            <form method="POST" action="{{ url_for('punto_venta.eliminar_producto') }}" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="id_detalle" value="{{ detalle.idDetalleVenta }}">
+                                <button type="submit" class="px-2 bg-red rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                    Eliminar
+                </button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div id="lista-vacia" class="text-center py-10 text-gray-500">
+                No hay productos agregados
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="p-4 border-t bg-tertiary sticky bottom-0">
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-bold">Total:</span>
+                <span id="total-lista" class="font-bold">${{ "%.2f"|format(subtotal) }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <form method="POST" action="{{ url_for('punto_venta.cancelar_venta') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full bg-gray-300 hover:bg-gray-400 text-dark-gray py-2 rounded">
+                
+            </button>
+                </form>
+                <form method="POST" action="{{ url_for('punto_venta.finalizar_venta') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="w-full  bg-green hover:bg-dark-gray text-white py-2 rounded-lg border-2 border-dark-gray ">
+                Vender
+            </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal de confirmación personalizado -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 class="text-lg font-bold mb-4">Confirmar eliminación</h3>
+            <p class="mb-6">¿Estás seguro de que deseas eliminar este producto?</p>
+            <div class="flex justify-end space-x-3">
+                <button id="confirm-cancel" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancelar</button>
+                <button id="confirm-ok" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles de venta -->
+    {% if venta_activa and detalles_venta %}
+    <div class="mt-6 rounded-lg bg-tertiary p-4">
+        <h2 class="text-xl font-bold mb-4">Detalles de la Venta</h2>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Unit.</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for detalle in detalles_venta %}
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ detalle.tipo_galleta.nombre }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">{{ formatear_detalle(detalle) }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${{ "%.2f"|format(detalle.costoActual) }}</td>
+                        <td class="px-4 py-2 whitespace-nowrap">${{ "%.2f"|format(detalle.cantidad * detalle.costoActual) }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="font-bold">
+                        <td colspan="3" class="px-4 py-2 text-right">Total:</td>
+                        <td class="px-4 py-2">${{ "%.2f"|format(subtotal) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+    <!-- Ventas del día -->
+    <div class="p-6"> </div>
+    <!-- Ventas del día -->
+    {% if ventas_hoy_detalles %}
+    <div class="w-full max-w-screen-xl mx-auto p-4 bg-tertiary shadow-lg rounded-lg border-2 text-center">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Ventas de Hoy</h2>
+
+        <div class="overflow-x-auto w-full max-w-screen-xl mx-auto ">
+            <table class="min-w-full table-auto divide-y divide-gray-300 centered-table p-6 bg-gray-100 border-2 p-6 rounded-lg ">
+                <thead>
+                    <tr class="bg-primary text-dark-gray">
+                        <th class="border-2 p-6 text-center text-xs font-semibold text-gray-500 uppercase">Fecha de Venta</th>
+                        <th class="border-2 p-6 text-center text-xs font-semibold text-gray-500 uppercase">Precio Total</th>
+                        <th class="border-2 p-6 text-center text-xs font-semibold text-gray-500 uppercase">Detalles</th>
+                    </tr>
+                </thead>
+                <tbody class=" divide-y divide-gray-200">
+                    {% for venta in ventas_hoy_detalles %}
+                    <tr class="hover:bg-secondary border-2 p-6">
+                        <td class="p-6 whitespace-nowrap  text-dark-gray">{{ venta.fechaVenta.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="p-6 whitespace-nowrap  text-dark-gray">${{ "%.2f"|format(venta.precioTotal) }}</td>
+                        <td class="p-6 whitespace-nowrap  text-dark-gray">
+                            <div class="space-y-2">
+                                {% for detalle in venta.detalles %}
+                                <div class="text-sm text-left">
+                                    <span class="font-semibold">{{ detalle.tipo_galleta.nombre }} - </span> Cantidad: {{ detalle.cantidad }} -
+                                    <span class="font-semibold">Precio Unitario: </span> ${{ "%.2f"|format(detalle.costoActual) }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="p-4 bg-red-100 text-center text-red-700 rounded-lg">
+        <p>No hay ventas registradas hoy.</p>
+    </div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const listaProductos = document.getElementById('lista-productos');
+            const abrirBtn = document.getElementById('abrir-lista-btn');
+            const cerrarBtn = document.getElementById('cerrar-lista-btn');
+            const cartCounter = document.getElementById('cart-counter');
+
+            // Mostrar la lista y ocultar el botón flotante
+            function abrirLista() {
+                listaProductos.classList.remove('hidden');
+                abrirBtn.hidden = true;
+            }
+
+            // Ocultar la lista y mostrar el botón flotante
+            function cerrarLista() {
+                listaProductos.classList.add('hidden');
+                abrirBtn.hidden = false;
+            }
+
+            abrirBtn.addEventListener('click', abrirLista);
+            cerrarBtn.addEventListener('click', cerrarLista);
+
+            // Actualizar el contador de productos
+            function actualizarContador() {
+                const items = document.querySelectorAll('#items-lista li');
+                cartCounter.textContent = items.length;
+            }
+
+            // Exponer funciones globalmente si las usas fuera de este bloque
+            window.cerrarLista = cerrarLista;
+            window.actualizarContador = actualizarContador;
+
+            // Iniciar contador
+            actualizarContador();
+        });
+    </script>
+
+</main>
+
+<style>
+    /* Estilos para el modal con CSS puro */
+    
+    body {
+        padding-top: 80px;
+    }
+    
+    .modal-toggle {
+        display: none;
+    }
+    
+    .modal-toggle:checked+.modal-container {
+        display: flex;
+    }
+    
+    .centered-table {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .modal-container {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 5rem;
+    }
+    
+    .modal-content {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        width: 90%;
+        max-width: 28rem;
+    }
+    /* Asegura que la lista ocupe el espacio disponible con scroll */
+    
+    #contenido-lista {
+        height: calc(100% - 180px);
+        /* 120px para header y footer */
+        overflow-y: auto;
+    }
+    /* Estilo para los items de la lista */
+    
+    #items-lista li {
+        transition: all 0.2s ease;
+    }
+    
+    #items-lista li:hover {
+        background-color: #f9fafb;
+    }
+    /* Scroll personalizado */
+    
+    #contenido-lista::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    #contenido-lista::-webkit-scrollbar-thumb {
+        background-color: #d1d5db;
+        border-radius: 3px;
+    }
+    /* Estilos mejorados para el scroll */
+    
+    #contenido-lista {
+        scrollbar-width: thin;
+        /* Para navegadores Firefox */
+        scrollbar-color: #c1c1c1 #f1f1f1;
+        /* Color del scroll para Firefox */
+    }
+    /* Estilo del scroll para WebKit (Chrome, Safari, Edge) */
+    
+    #contenido-lista::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #contenido-lista::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    #contenido-lista::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    
+    #contenido-lista::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+    /* Asegurar que los items no se salgan del contenedor */
+    
+    #items-lista {
+        min-width: 0;
+    }
+    
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,9 @@
+<form method="POST" action="{{ url_for('produccion.terminar_orden', id_lote=lote.idLoteGalleta) }}">
+    <label>Galletas Buenas:</label>
+    <input type="number" name="galletas_buenas" min="1" required>
+
+    <label>Galletas Perdidas (Merma):</label>
+    <input type="number" name="merma" min="0" required>
+
+    <button type="submit">Terminar Orden</button>
+</form>

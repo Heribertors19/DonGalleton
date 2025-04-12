@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+{% block title %}Compras - Sistema de Inventario{% endblock %}
+{% block content %}
+{% include "header2.html" %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<div class="container mx-auto px-4 py-15 flex flex-col items-center p-8 mt-10 w-5/6">  <!-- Cambiado a w-4/5 (80%) -->
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Registro de Compras</h1>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden w-full"> 
+        <!-- Barra de búsqueda y botón -->
+        <div class="flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 border-b gap-4">
+            <div class="w-full md:w-1/2 relative">
+                <input type="text" id="searchInput" placeholder="Buscar compras..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-300 focus:border-purple-00">
+                <svg class="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+            </div>
+            <button onclick="abrirModalNuevaCompra()" 
+                    class="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+                Nueva Compra
+            </button>
+        </div>
+
+        <!-- Tabla de compras -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">N° Compra</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalle</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="comprasTableBody">
+                    {% if compras %}
+                        {% for compra in compras %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ compra.numero_compra }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ compra.fecha }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${{ "%.2f"|format(compra.total) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="verDetalleCompra('{{ compra.id }}')" 
+                                        class="text-blue-600 hover:text-blue-800 underline">
+                                    Ver
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No hay compras registradas</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Compra -->
+<div id="nuevaCompraModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-xl font-semibold text-gray-800">Registrar Nueva Compra</h3>
+            <button onclick="cerrarModalNuevaCompra()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <form id="formNuevaCompra" class="py-4 space-y-4">
+            <!-- Selector de insumo primero -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Insumo</label>
+                <select id="selectInsumo"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Cargando insumos...</option>
+                </select>
+            </div>
+
+            <!-- Proveedor (se autoselecciona) -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
+                <select id="selectProveedor" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" disabled>
+                    <option value="">Seleccione un insumo primero</option>
+                </select>
+            </div>
+
+            <!-- Cantidad y botón agregar -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                <div class="flex gap-2">
+                    <input type="number" id="cantidadInsumo" min="1" value="1" placeholder="Cantidad"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <button type="button" onclick="agregarInsumo()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Agregar Insumo</button>
+                </div>
+            </div>
+
+            <!-- Tabla de insumos agregados -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Insumo</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Unitario</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="insumosSeleccionados" class="bg-white divide-y divide-gray-200">
+                        <!-- Insumos se agregarán aquí -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="px-4 py-2 text-right font-medium">Total:</td>
+                            <td id="totalCompra" class="px-4 py-2 font-bold">$0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t">
+                <button type="button" onclick="cerrarModalNuevaCompra()"
+                        class="mr-2 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancelar</button>
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Registrar Compra</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Detalle Compra -->
+<div id="detalleCompraModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-xl font-semibold text-gray-800">Detalle de Compra <span id="numeroCompraDetalle"></span></h3>
+            <button onclick="cerrarDetalleCompraModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="py-4 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Proveedor:</p>
+                    <p id="proveedorDetalle" class="text-sm text-gray-800"></p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Fecha:</p>
+                    <p id="fechaDetalle" class="text-sm text-gray-800"></p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Total:</p>
+                    <p id="totalDetalle" class="text-sm text-gray-800"></p>
+                </div>
+            </div>
+
+            <div class="border rounded-lg overflow-hidden mt-4">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Insumo</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Unitario</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detallesCompraBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Detalles se cargarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t">
+                <button onclick="cerrarDetalleCompraModal()" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col items-center">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">¡Atención!</h3>
+            <p class="text-gray-600 mb-6 text-center" id="confirmMessage"></p>
+            <div class="flex space-x-4">
+                <button id="confirmCancel" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                <button id="confirmAccept" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Continuar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div id="successModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col items-center">
+            <svg class="h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">¡Éxito!</h3>
+            <p class="text-gray-600 mb-6 text-center" id="successMessage"></p>
+            <button onclick="cerrarSuccessModal()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globales
+    let insumosDisponibles = [];
+    let insumosSeleccionados = [];
+    let proveedoresDisponibles = [];
+
+    // Función para abrir el modal de nueva compra
+    async function abrirModalNuevaCompra() {
+        const modal = document.getElementById('nuevaCompraModal');
+        modal.classList.remove('hidden');
+        
+        // Limpiar formulario
+        document.getElementById('formNuevaCompra').reset();
+        document.getElementById('insumosSeleccionados').innerHTML = '';
+        document.getElementById('totalCompra').textContent = '$0.00';
+        insumosSeleccionados = [];
+        
+        // Cargar datos
+        await cargarProveedores();
+        await cargarInsumos();
+    }
+
+    function cerrarModalNuevaCompra() {
+        document.getElementById('nuevaCompraModal').classList.add('hidden');
+    }
+
+    function cerrarSuccessModal() {
+        document.getElementById('successModal').classList.add('hidden');
+    }
+
+    function cerrarDetalleCompraModal() {
+        document.getElementById('detalleCompraModal').classList.add('hidden');
+    }
+
+    // Función para abrir el modal de detalle de compra
+    async function verDetalleCompra(idCompra) {
+        try {
+            // Mostrar loader o mensaje de carga
+            document.getElementById('detallesCompraBody').innerHTML = '<tr><td colspan="4" class="px-4 py-2 text-center">Cargando...</td></tr>';
+            
+            const modal = document.getElementById('detalleCompraModal');
+            modal.classList.remove('hidden');
+            
+            // Obtener los detalles de la compra
+            const response = await fetch(`/api/compras/${idCompra}/detalles`);
+            if (!response.ok) throw new Error('Error al cargar los detalles');
+            
+            const data = await response.json();
+            
+            // Actualizar la información general
+            document.getElementById('numeroCompraDetalle').textContent = `CMP-${data.compra.id}`;
+            document.getElementById('proveedorDetalle').textContent = data.compra.proveedor;
+            document.getElementById('fechaDetalle').textContent = data.compra.fecha;
+            document.getElementById('totalDetalle').textContent = `$${data.compra.total.toFixed(2)}`;
+            
+            // Actualizar la tabla de detalles
+            const tbody = document.getElementById('detallesCompraBody');
+            tbody.innerHTML = '';
+            
+            if (data.detalles && data.detalles.length > 0) {
+                data.detalles.forEach(detalle => {
+                    const subtotal = detalle.cantidad * detalle.precio;
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2">${detalle.nombre}</td>
+                        <td class="px-4 py-2">${detalle.cantidad}</td>
+                        <td class="px-4 py-2">$${detalle.precio.toFixed(2)}</td>
+                        <td class="px-4 py-2">$${subtotal.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-2 text-center">No hay detalles registrados</td></tr>';
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('detallesCompraBody').innerHTML = '<tr><td colspan="4" class="px-4 py-2 text-center text-red-500">Error al cargar los detalles</td></tr>';
+        }
+    }
+
+    // Función para cargar proveedores
+    async function cargarProveedores() {
+        try {
+            const response = await fetch('/api/proveedores');
+            if (!response.ok) throw new Error('Error al cargar proveedores');
+            
+            proveedoresDisponibles = await response.json();
+            actualizarSelectProveedor();
+        } catch (error) {
+            console.error('Error:', error);
+            showSuccessModal('Error al cargar proveedores');
+        }
+    }
+
+    function actualizarSelectProveedor(proveedorId = '') {
+        const select = document.getElementById('selectProveedor');
+        select.innerHTML = '<option value="">Seleccione un insumo</option>';
+        
+        proveedoresDisponibles.forEach(proveedor => {
+            const option = document.createElement('option');
+            option.value = proveedor.id;
+            option.textContent = proveedor.nombre;
+            if (proveedor.id == proveedorId) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+        
+        select.disabled = !proveedorId;
+    }
+
+    // Función para cargar insumos
+    async function cargarInsumos() {
+        try {
+            const response = await fetch('/api/insumos');
+            if (!response.ok) throw new Error('Error al cargar insumos');
+            
+            insumosDisponibles = await response.json();
+            const select = document.getElementById('selectInsumo');
+            
+            select.innerHTML = '<option value="">Seleccionar insumo</option>';
+            insumosDisponibles.forEach(insumo => {
+                const option = document.createElement('option');
+                option.value = insumo.id;
+                option.textContent = `${insumo.nombre} - $${insumo.precio.toFixed(2)}`;
+                option.dataset.precio = insumo.precio;
+                option.dataset.proveedorId = insumo.idProveedor;
+                select.appendChild(option);
+            });
+
+            // Event listener para cambiar proveedor al seleccionar insumo
+            select.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const proveedorId = selectedOption.dataset.proveedorId;
+                
+                if (proveedorId) {
+                    actualizarSelectProveedor(proveedorId);
+                } else {
+                    document.getElementById('selectProveedor').value = '';
+                    document.getElementById('selectProveedor').disabled = true;
+                }
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            showSuccessModal('Error al cargar insumos');
+        }
+    }
+
+    // Función para agregar insumo a la lista
+    function agregarInsumo() {
+        const select = document.getElementById('selectInsumo');
+        const cantidadInput = document.getElementById('cantidadInsumo');
+        const selectProveedor = document.getElementById('selectProveedor');
+        
+        if (!select.value) {
+            showSuccessModal('Por favor selecciona un insumo');
+            return;
+        }
+        
+        const cantidad = parseInt(cantidadInput.value);
+        if (isNaN(cantidad) || cantidad < 1) {
+            showSuccessModal('Por favor ingresa una cantidad válida');
+            return;
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        const insumoNombre = selectedOption.text.split(' - ')[0];
+        const precio = parseFloat(selectedOption.dataset.precio);
+        const proveedorId = selectProveedor.value;
+        
+        if (!proveedorId) {
+            showSuccessModal('El insumo seleccionado no tiene proveedor asociado');
+            return;
+        }
+        
+        // Verificar si el insumo ya está agregado
+        const index = insumosSeleccionados.findIndex(i => i.id == select.value);
+        
+        if (index >= 0) {
+            // Actualizar cantidad si ya existe
+            insumosSeleccionados[index].cantidad += cantidad;
+        } else {
+            // Agregar nuevo insumo
+            insumosSeleccionados.push({
+                id: select.value,
+                nombre: insumoNombre,
+                precio: precio,
+                cantidad: cantidad,
+                idProveedor: proveedorId
+            });
+        }
+        
+        // Actualizar tabla
+        actualizarTablaInsumos();
+        
+        // Limpiar solo el insumo (NO limpiar el proveedor)
+        select.value = '';
+        cantidadInput.value = 1;
+    }
+
+    // Función para actualizar la tabla de insumos seleccionados
+    function actualizarTablaInsumos() {
+        const tbody = document.getElementById('insumosSeleccionados');
+        tbody.innerHTML = '';
+        
+        let total = 0;
+        
+        insumosSeleccionados.forEach((insumo, index) => {
+            const subtotal = insumo.precio * insumo.cantidad;
+            total += subtotal;
+            
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-4 py-2">${insumo.nombre}</td>
+                <td class="px-4 py-2">${insumo.cantidad}</td>
+                <td class="px-4 py-2">$${insumo.precio.toFixed(2)}</td>
+                <td class="px-4 py-2">$${subtotal.toFixed(2)}</td>
+                <td class="px-4 py-2">
+                    <button onclick="eliminarInsumo(${index})" class="text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById('totalCompra').textContent = `$${total.toFixed(2)}`;
+    }
+
+    // Función para eliminar insumo de la lista
+    function eliminarInsumo(index) {
+        insumosSeleccionados.splice(index, 1);
+        actualizarTablaInsumos();
+        
+        // Si no hay más insumos, resetear el proveedor
+        if (insumosSeleccionados.length === 0) {
+            document.getElementById('selectProveedor').value = '';
+            document.getElementById('selectProveedor').disabled = true;
+        }
+    }
+
+// Función para enviar el formulario de nueva compra
+document.getElementById('formNuevaCompra').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const selectProveedor = document.getElementById('selectProveedor');
+    const proveedorId = selectProveedor.value;
+    
+    if (!proveedorId) {
+        showSuccessModal('Debes seleccionar un proveedor');
+        return;
+    }
+    
+    if (insumosSeleccionados.length === 0) {
+        showSuccessModal('Debes agregar al menos un insumo');
+        return;
+    }
+    
+    // Verificar que todos los insumos pertenezcan al proveedor seleccionado
+    const insumosConProveedorIncorrecto = insumosSeleccionados.filter(i => i.idProveedor != proveedorId);
+    if (insumosConProveedorIncorrecto.length > 0) {
+        showSuccessModal('Todos los insumos deben pertenecer al proveedor seleccionado');
+        return;
+    }
+    
+    const formData = {
+        idProveedor: proveedorId,
+        insumos: insumosSeleccionados.map(i => ({
+            id: i.id,
+            cantidad: i.cantidad,
+            precio: i.precio
+        }))
+    };
+    
+    try {
+        const response = await fetch('/realizar-compra', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        // Verificar si la respuesta es válida
+        if (!response.ok) {
+            throw new Error('Error en la respuesta del servidor');
+        }
+        
+        const data = await response.json();
+        
+        // Verificación robusta de la respuesta
+        const responseData = data || {};
+        if (responseData.success) {
+            showSuccessModal(responseData.message || 'Compra registrada exitosamente');
+            cerrarModalNuevaCompra();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            throw new Error(responseData.message || 'Error al registrar la compra');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showSuccessModal(error.message || 'Error al comunicarse con el servidor');
+    }
+});
+    // Función para mostrar modal de confirmación
+    function showConfirmationModal(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const messageElement = document.getElementById('confirmMessage');
+            
+            messageElement.textContent = message;
+            modal.classList.remove('hidden');
+            
+            const confirmBtn = document.getElementById('confirmAccept');
+            const cancelBtn = document.getElementById('confirmCancel');
+            
+            confirmBtn.onclick = function() {
+                modal.classList.add('hidden');
+                resolve(true);
+            };
+            
+            cancelBtn.onclick = function() {
+                modal.classList.add('hidden');
+                resolve(false);
+            };
+        });
+    }
+
+    // Función para mostrar modal de éxito
+    function showSuccessModal(message) {
+        const modal = document.getElementById('successModal');
+        const messageElement = document.getElementById('successMessage');
+        
+        messageElement.textContent = message;
+        modal.classList.remove('hidden');
+    }
+
+    // Cerrar modales al hacer clic fuera
+    window.onclick = function(event) {
+        if (event.target === document.getElementById('nuevaCompraModal')) {
+            cerrarModalNuevaCompra();
+        }
+        if (event.target === document.getElementById('confirmModal')) {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+        if (event.target === document.getElementById('successModal')) {
+            cerrarSuccessModal();
+        }
+        if (event.target === document.getElementById('detalleCompraModal')) {
+            cerrarDetalleCompraModal();
+        }
+    }
+
+    // Manejar búsqueda de compras
+    document.getElementById('searchInput').addEventListener('input', async function() {
+        const searchTerm = this.value.trim();
+        try {
+            const response = await fetch(`/compras?search=${encodeURIComponent(searchTerm)}`);
+            if (!response.ok) throw new Error('Error en la búsqueda');
+            
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTableBody = doc.getElementById('comprasTableBody');
+            
+            if (newTableBody) {
+                document.getElementById('comprasTableBody').innerHTML = newTableBody.innerHTML;
+            }
+        } catch (error) {
+            console.error('Error en la búsqueda:', error);
+        }
+    });
+</script>
+{% endblock %}

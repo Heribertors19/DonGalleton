@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+{% include "header2.html" %}
+
+<!-- Contenido principal -->
+<div class="bg-secondary min-h-screen grid grid-cols-2 md:grid-cols-3 gap-4 p-10 w-full mt-10 justify-center">
+    <div class="bg-primary rounded-2xl p-4 m-2 col-span-2 md:col-span-2 md:row-span-3"></div>
+    {% for menu in menus %}
+        <div class="bg-primary rounded-2xl p-4 m-2 col-span-1 shadow-sm">
+            <div class="bg-tertiary rounded-2xl h-full w-full flex justify-center text-center items-center">
+                <h1 class="font-bold sm:text-xl md:text-2xl lg:text-4xl xl:text-6xl">
+                    {{ menu.nombre }}
+                </h1>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- Botones -->
+
+
+    <a href="{{ url_for('receta.registrarReceta') }}" class="bg-primary hover:bg-pink-600 text-black text-center font-bold py-3 px-6 rounded-2xl shadow-lg transition-all duration-300">
+        Punto venta
+    </a>
+    <a href="{{ url_for('insumo.reporteInsum') }}" class="bg-primary hover:bg-pink-600 text-black text-center font-bold py-3 px-6 rounded-2xl shadow-lg transition-all duration-300">
+        Insumos
+    </a>
+</div>
+
+<script>
+    // Evitar que la página se cargue desde el cache
+    window.onpageshow = function(event) {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    };
+    
+    // Deshabilitar el botón atrás
+    history.pushState(null, null, document.URL);
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, document.URL);
+    });
+</script>
+
+{% endblock %}

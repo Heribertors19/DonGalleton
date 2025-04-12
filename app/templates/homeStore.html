@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Online store{% endblock %}
+
+{% block content %}
+{% include "headerStore.html" %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<!-- Main container -->
+<div class="container mx-auto px-4 py-8 flex flex-col items-center p-8 mt-16">
+    <div class="w-full max-w-6xl">
+        <!-- Search and sort bar -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="w-full md:w-1/2 relative">
+                <input type="text" id="searchInput" placeholder="Buscar en catálogo..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                <svg class="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <div class="w-full md:w-auto flex items-center gap-2">
+                <label for="sortSelect" class="text-sm font-medium text-gray-700 whitespace-nowrap">Ordenar
+                    catálogo:</label>
+                <select id="sortSelect"
+                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                    <option value="default">Predeterminado</option>
+                    <option value="name-asc">Nombre (A-Z)</option>
+                    <option value="name-desc">Nombre (Z-A)</option>
+                    <option value="price-asc">Precio (Menor a Mayor)</option>
+                    <option value="price-desc">Precio (Mayor a Menor)</option>
+                    <option value="stock-asc">Stock (Menor a Mayor)</option>
+                    <option value="stock-desc">Stock (Mayor a Menor)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Featured products section -->
+        {% if destacadas %}
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-6 text-center">Nuestras Estrellas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center">
+                {% for galleta in destacadas %}
+                <article
+                    class="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-amber-400 transform hover:scale-105 transition-transform duration-300 w-full max-w-xs relative z-0">
+                    <div class="relative h-48 bg-gray-100">
+                        <img src="{{ galleta.imagen }}" class="w-full h-full object-cover" alt="{{ galleta.nombre }}"
+                            loading="lazy">
+                        <div
+                            class="absolute top-2 left-2 bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md">
+                            TOP {{ loop.index }}
+                        </div>
+                    </div>
+                    <div class="p-4 text-center">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ galleta.nombre }}</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-medium">${{ "%.2f"|format(galleta.precio) }}</span>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ galleta.stock }} disponibles
+                            </span>
+                        </div>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Full catalog section -->
+        <section>
+            <h2 class="text-2xl font-semibold mb-6 text-center">Nuestro Catálogo Completo</h2>
+
+            {% if productos %}
+            <div id="catalogoContainer"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-items-center">
+                {% for galleta in productos %}
+                <article
+                    class="galleta-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 relative w-full max-w-xs z-0"
+                    data-name="{{ galleta.nombre|lower }}" data-price="{{ galleta.precio }}"
+                    data-stock="{{ galleta.stock }}">
+                    <div class="relative h-48 bg-gray-100 overflow-hidden">
+                        <img src="{{ galleta.imagen }}"
+                            class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                            alt="{{ galleta.nombre }}" loading="lazy">
+
+                        {% if not galleta.disponible %}
+                        <div class="absolute top-3 right-3 z-10">
+                            <span
+                                class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                AGOTADO
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="p-4 text-center">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{{ galleta.nombre }}</h3>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-gray-600 font-medium">${{ "%.2f"|format(galleta.precio) }}</span>
+                            <span class="text-xs text-gray-500">{{ galleta.peso }}</span>
+                        </div>
+
+                        <button
+                            onclick="addToCart(event, '{{ galleta.id }}', '{{ galleta.nombre }}', {{ galleta.precio }}, '{{ galleta.imagen }}')"
+                            class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center mx-auto
+                                       {% if not galleta.disponible %}opacity-50 cursor-not-allowed{% endif %}" {% if
+                            not galleta.disponible %}disabled{% endif %}>
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Añadir al carrito
+                        </button>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-gray-50 rounded-lg max-w-2xl mx-auto">
+                <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="text-xl font-medium text-gray-600 mt-4">No hay galletas disponibles</h3>
+                <p class="text-gray-500 mt-1">Pronto tendremos nuestro catálogo listo</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+</div>
+
+<!-- Cart Modal -->
+<div id="cartModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div class="flex justify-between items-center border-b p-4">
+            <h3 class="text-xl font-semibold">Tu Carrito</h3>
+            <button id="closeCartModal" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="p-4 overflow-y-auto max-h-[60vh]">
+            <div id="cartItemsContainer">
+                <p class="text-center text-gray-500 py-8">Tu carrito está vacío</p>
+            </div>
+        </div>
+
+        <div class="border-t p-4">
+            <div class="flex justify-between mb-4">
+                <span class="font-semibold">Total:</span>
+                <span id="cartTotal" class="font-bold">$0.00</span>
+            </div>
+            <button id="placeOrderButton"
+                class="w-full bg-purple-400 hover:bg-violet-400 text-white py-2 px-4 rounded-lg transition-colors duration-300">
+                Realizar Pedido
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Order Confirmation Modal -->
+<div id="orderModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-semibold">Confirmar Pedido</h3>
+            <button id="closeOrderModal" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <form id="orderForm">
+            <div class="mb-4">
+                <label for="deliveryDate" class="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
+                <input type="date" id="deliveryDate" name="deliveryDate"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                    min="" required>
+            </div>
+
+            <div class="mb-6">
+                <label for="deliveryTime" class="block text-sm font-medium text-gray-700 mb-1">Hora de entrega</label>
+                <select id="deliveryTime" name="deliveryTime"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-amber-500 focus:border-amber-500"
+                    required>
+                    <option value="">Selecciona una hora</option>
+                    <option value="09:00 - 12:00">Mañana (9:00 - 12:00)</option>
+                    <option value="12:00 - 15:00">Mediodía (12:00 - 15:00)</option>
+                    <option value="15:00 - 18:00">Tarde (15:00 - 18:00)</option>
+                    <option value="18:00 - 21:00">Noche (18:00 - 21:00)</option>
+                </select>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors duration-300">
+                Confirmar Pedido
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Order Success Modal -->
+<div id="successModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6 text-center">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">¡Pedido Realizado con Éxito!</h3>
+        <div id="orderDetails" class="text-sm text-gray-500 mb-6">
+            <p>Número de pedido: <span id="orderNumber" class="font-semibold"></span></p>
+        </div>
+        <button id="closeSuccessModal"
+            class="w-full bg-purple-400 hover:bg-violet-400 text-white py-2 px-4 rounded-lg transition-colors duration-300">
+            Aceptar
+        </button>
+    </div>
+</div>
+
+<style>
+    /* Animation for spinner */
+    .spinner {
+        display: inline-block;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid rgba(255, 255, 255, .3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Animation for notifications */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+</style>
+
+<script>
+    // Cart object with all functionality
+    const Cart = {
+        get: () => {
+            try {
+                return JSON.parse(localStorage.getItem('cart')) || [];
+            } catch (e) {
+                console.error("Error getting cart:", e);
+                return [];
+            }
+        },
+
+        save: (cart) => {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        },
+
+        addItem: (id, nombre, precio, imagen) => {
+            const cart = Cart.get();
+            const existingItem = cart.find(item => item.id === id);
+
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: id,
+                    nombre: nombre,
+                    precio: precio,
+                    imagen: imagen,
+                    quantity: 1
+                });
+            }
+
+            Cart.save(cart);
+            return cart;
+        },
+
+        updateItem: (id, quantity) => {
+            const cart = Cart.get();
+            const item = cart.find(item => item.id === id);
+
+            if (item) {
+                if (quantity <= 0) {
+                    Cart.removeItem(id);
+                    return;
+                }
+                item.quantity = quantity;
+                Cart.save(cart);
+            }
+        },
+
+        removeItem: (id) => {
+            let cart = Cart.get();
+            cart = cart.filter(item => item.id !== id);
+            Cart.save(cart);
+            return cart;
+        },
+
+        calculateTotal: () => {
+            const cart = Cart.get();
+            return cart.reduce((total, item) => total + (item.precio * item.quantity), 0);
+        },
+
+        updateCounter: () => {
+            const counter = document.getElementById('cartCounter');
+            if (counter) {
+                const cart = Cart.get();
+                const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+                counter.textContent = totalItems;
+                counter.classList.toggle('hidden', totalItems === 0);
+            }
+        },
+
+        renderItems: () => {
+            const container = document.getElementById('cartItemsContainer');
+            const cart = Cart.get();
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">Tu carrito está vacío</p>';
+                return;
+            }
+
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center py-4 border-b" data-id="${item.id}">
+                    <img src="${item.imagen}" alt="${item.nombre}" class="w-16 h-16 object-cover rounded">
+                    <div class="ml-4 flex-1">
+                        <h4 class="font-medium">${item.nombre}</h4>
+                        <p class="text-amber-600 font-semibold">$${(item.precio * item.quantity).toFixed(2)}</p>
+                        <div class="flex items-center mt-1">
+                            <button class="decrease-quantity px-2 py-1 bg-gray-200 rounded" data-id="${item.id}">-</button>
+                            <span class="quantity mx-2">${item.quantity}</span>
+                            <button class="increase-quantity px-2 py-1 bg-gray-200 rounded" data-id="${item.id}">+</button>
+                            <button class="remove-item ml-4 text-red-500 text-sm" data-id="${item.id}">
+                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('cartTotal').textContent = $${Cart.calculateTotal().toFixed(2)};
+        },
+
+        clear: () => {
+            localStorage.removeItem('cart');
+            Cart.updateCounter();
+        }
+    };
+
+    // Notification system
+    function showNotification(message, isError = false) {
+        const notification = document.createElement('div');
+        notification.className = fixed bottom-4 right-4 ${isError ? 'bg-red-500' : 'bg-green-500'} text-white px-4 py-2 rounded-lg shadow-lg flex items-center animate-fade-in z-50;
+        notification.innerHTML = `
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isError ? 'M6 18L18 6M6 6l12 12' : 'M5 13l4 4L19 7'}"/>
+            </svg>
+            ${message}
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Add to cart function
+    function addToCart(event, id, nombre, precio, imagen) {
+        try {
+            if (!id || !nombre || !precio) {
+                throw new Error("Datos del producto incompletos");
+            }
+
+            const button = event.target;
+            if (button.disabled) {
+                showNotification("Este producto no está disponible", true);
+                return;
+            }
+
+            Cart.addItem(id, nombre, precio, imagen);
+            showNotification('${nombre} añadida al carrito');
+            Cart.updateCounter();
+
+        } catch (e) {
+            console.error("Error adding to cart:", e);
+            showNotification("Error al añadir al carrito", true);
+        }
+    }
+
+    // Setup date picker with min date
+    function setupDatePicker() {
+        const dateInput = document.getElementById('deliveryDate');
+        if (dateInput) {
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            dateInput.min = formattedDate;
+            dateInput.value = formattedDate; // Set today as default
+        }
+    }
+
+    // Get CSRF token from meta tag
+    function getCSRFToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        return metaTag ? metaTag.content : '';
+    }
+
+    // Show success modal with order details
+    function showSuccessModal(orderData) {
+        const orderNumberEl = document.getElementById('orderNumber');
+        if (orderNumberEl) {
+            orderNumberEl.textContent = orderData.numero_pedido || 'N/A';
+        }
+
+        document.getElementById('orderModal')?.classList.add('hidden');
+        document.getElementById('successModal')?.classList.remove('hidden');
+    }
+
+    // Submit order function
+    async function submitOrder(orderData) {
+        try {
+            console.log("Datos enviados al backend:", orderData);
+            const response = await fetch('/crear_pedidos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify(orderData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("Error del backend:", errorData);
+                throw new Error(errorData.message || 'Error al procesar el pedido');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error completo en submitOrder:', error);
+            throw error;
+        }
+    }
+
+    // Setup all modals and their interactions
+    function setupModals() {
+        const cartModal = document.getElementById('cartModal');
+        const orderModal = document.getElementById('orderModal');
+        const successModal = document.getElementById('successModal');
+        const closeCartModal = document.getElementById('closeCartModal');
+        const closeOrderModal = document.getElementById('closeOrderModal');
+        const closeSuccessModal = document.getElementById('closeSuccessModal');
+        const placeOrderButton = document.getElementById('placeOrderButton');
+        const orderForm = document.getElementById('orderForm');
+        const cartButton = document.getElementById('cartButton');
+
+        // Open cart modal
+        if (cartButton) {
+            cartButton.addEventListener('click', () => {
+                Cart.renderItems();
+                cartModal?.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            });
+        }
+
+        // Close cart modal
+        if (closeCartModal) {
+            closeCartModal.addEventListener('click', () => {
+                cartModal?.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            });
+        }
+
+        // Open order modal from cart
+        if (placeOrderButton) {
+            placeOrderButton.addEventListener('click', () => {
+                if (Cart.get().length === 0) {
+                    showNotification("Tu carrito está vacío", true);
+                    return;
+                }
+                cartModal?.classList.add('hidden');
+                orderModal?.classList.remove('hidden');
+            });
+        }
+
+        // Close order modal
+        if (closeOrderModal) {
+            closeOrderModal.addEventListener('click', () => {
+                orderModal?.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            });
+        }
+
+        // Handle order form submission
+        if (orderForm) {
+            orderForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = <span class="spinner"></span> Procesando...;
+                }
+
+                try {
+                    const deliveryDate = document.getElementById('deliveryDate')?.value;
+                    const deliveryTime = document.getElementById('deliveryTime')?.value;
+
+                    if (!deliveryDate || !deliveryTime) {
+                        throw new Error('Selecciona fecha y hora de entrega');
+                    }
+
+                    const cartItems = Cart.get();
+                    if (cartItems.length === 0) {
+                        throw new Error('Tu carrito está vacío');
+                    }
+
+                    // Prepare order data
+                    const orderData = {
+                        fechaEntrega: ${deliveryDate} ${deliveryTime.split(' ')[0]}:00, // Formato "YYYY-MM-DD HH:MM:00"
+                        items: cartItems.map(item => ({
+                            idTipoGalleta: parseInt(item.id),
+                            cantidad: parseInt(item.quantity)
+                        }))
+                    };
+
+                    // Send order to server
+                    const result = await submitOrder(orderData);
+
+                    if (result.success) {
+                        showSuccessModal({
+                            numero_pedido: result.numero_pedido,
+                            fecha_entrega: new Date(deliveryDate).toLocaleDateString('es-ES'),
+                            hora_entrega: deliveryTime,
+                            total: Cart.calculateTotal()
+                        });
+                        Cart.clear();
+                    } else {
+                        throw new Error(result.message || 'Error al crear el pedido');
+                    }
+
+                } catch (error) {
+                    showNotification(error.message, true);
+                    console.error('Error completo:', error);
+                } finally {
+                    const submitBtn = orderForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Confirmar Pedido';
+                    }
+                }
+            });
+        }
+
+        // Close success modal
+        if (closeSuccessModal) {
+            closeSuccessModal.addEventListener('click', () => {
+                successModal?.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            });
+        }
+
+        // Close modals when clicking outside
+        [cartModal, orderModal, successModal].forEach(modal => {
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                        document.body.classList.remove('overflow-hidden');
+                    }
+                });
+            }
+        });
+    }
+
+    // Handle cart item interactions
+    function setupCartItems() {
+        const container = document.getElementById('cartItemsContainer');
+        if (!container) return;
+
+        container.addEventListener('click', (e) => {
+            const id = e.target.closest('[data-id]')?.dataset.id;
+            if (!id) return;
+
+            if (e.target.classList.contains('increase-quantity')) {
+                const item = Cart.get().find(item => item.id === id);
+                if (item) {
+                    Cart.updateItem(id, item.quantity + 1);
+                    Cart.renderItems();
+                    Cart.updateCounter();
+                }
+            }
+            else if (e.target.classList.contains('decrease-quantity')) {
+                const item = Cart.get().find(item => item.id === id);
+                if (item) {
+                    Cart.updateItem(id, item.quantity - 1);
+                    Cart.renderItems();
+                    Cart.updateCounter();
+                }
+            }
+            else if (e.target.classList.contains('remove-item') || e.target.closest('.remove-item')) {
+                Cart.removeItem(id);
+                Cart.renderItems();
+                Cart.updateCounter();
+                showNotification('Producto eliminado del carrito');
+            }
+        });
+    }
+
+    // Setup search and sort functionality
+    function setupSearchAndSort() {
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const catalogoContainer = document.getElementById('catalogoContainer');
+
+        if (searchInput && sortSelect && catalogoContainer) {
+            searchInput.addEventListener('input', debounce(filterAndSortCatalogo, 300));
+            sortSelect.addEventListener('change', filterAndSortCatalogo);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchParam = urlParams.get('search');
+            if (searchParam) {
+                searchInput.value = searchParam;
+                filterAndSortCatalogo();
+            }
+        }
+
+        function filterAndSortCatalogo() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const sortOption = sortSelect.value;
+            const galletasCards = document.querySelectorAll('#catalogoContainer .galleta-card');
+
+            let filtered = Array.from(galletasCards).filter(card => {
+                const name = card.dataset.name.toLowerCase();
+                return name.includes(searchTerm);
+            });
+
+            filtered.sort((a, b) => {
+                switch (sortOption) {
+                    case 'name-asc': return a.dataset.name.localeCompare(b.dataset.name);
+                    case 'name-desc': return b.dataset.name.localeCompare(a.dataset.name);
+                    case 'price-asc': return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+                    case 'price-desc': return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+                    case 'stock-asc': return parseInt(a.dataset.stock) - parseInt(b.dataset.stock);
+                    case 'stock-desc': return parseInt(b.dataset.stock) - parseInt(a.dataset.stock);
+                    default: return 0;
+                }
+            });
+
+            updateCatalogoDisplay(filtered);
+        }
+
+        function updateCatalogoDisplay(galletas) {
+            catalogoContainer.innerHTML = '';
+
+            if (galletas.length === 0) {
+                catalogoContainer.innerHTML = `
+                <div class="col-span-full text-center py-12 bg-gray-50 rounded-lg">
+                    <svg class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <h3 class="text-xl font-medium text-gray-600 mt-4">No se encontraron galletas</h3>
+                    <p class="text-gray-500 mt-1">Intenta con otro término de búsqueda</p>
+                </div>
+            `;
+            } else {
+                galletas.forEach(card => catalogoContainer.appendChild(card));
+            }
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function () {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+    }
+
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        setupDatePicker();
+        Cart.updateCounter();
+        setupSearchAndSort();
+        setupModals();
+        setupCartItems();
+    });
+</script>
+
+{%endblock%}

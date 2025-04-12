@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+{% include "header.html" %}
+<br>
+<br>
+<br>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 py-4 px-6">
+                <h1 class="text-4xl font-bold text-black text-center">Eliminar Usuario</h1>
+            </div>
+            <!-- Contenedor centrado y con un ancho más amplio -->
+            <div class="max-w-3xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+                <form method="POST" action="{{ url_for('auth.desactivarU') }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Buscar Usuario -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <label for="usuario" class="text-md font-semibold mb-3 text-gray-700">Buscar Usuario</label>
+                        <div class="flex gap-3">
+                            <input type="text" id="usuario" name="usuario" 
+                                class="w-full px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                value="{{ usuario_data.usuario if usuario_data else '' }}" required>
+                            <button type="submit" name="buscar" 
+                                class="px-3 py-1 bg-primary text-white font-medium rounded-lg hover:bg-blue-700 focus:ring-blue-500">
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Datos del Usuario (se muestra solo si hay datos) -->
+                    {% if usuario_data %}
+                    <div class="space-y-4">
+                        <h2 class="text-md font-semibold text-gray-700">Datos del Usuario</h2>
+                        
+                        <!-- Nombre de Usuario (no editable) -->
+                        <label for="usuario" class="text-sm text-gray-700">Nombre de Usuario</label>
+                        <input type="text" id="usuario" name="usuario" 
+                            class="w-full px-2 py-1 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                            value="{{ usuario_data.usuario }}" readonly>
+
+                        <!-- Nombre -->
+                        <label for="nombre" class="text-sm text-gray-700">Nombre</label>
+                        {{ form.nombre(class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500", readonly=True) }}
+
+                        <!-- Apellidos -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="apellidoPaterno" class="text-sm text-gray-700">Apellido Paterno</label>
+                                {{ form.apellidoPaterno(class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500", readonly=True) }}
+                            </div>
+                            <div>
+                                <label for="apellidoMaterno" class="text-sm text-gray-700">Apellido Materno</label>
+                                {{ form.apellidoMaterno(class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500", readonly=True) }}
+                            </div>
+                        </div>
+
+                        <!-- Rol (ocultarlo y hacerlo no editable) -->
+                        <label for="idRol" class="text-sm text-gray-700">Rol</label>
+                        <input type="text" id="idRol" name="idRol" 
+                            class="w-full px-2 py-1 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed" 
+                            value="{{ usuario_data.idRol }}" readonly style="display:none;">
+
+                        <label for="descripcion" class="text-sm text-gray-700">Descripcion</label>
+                        {{ form.descripcion(class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500", readonly=True) }}
+
+                        <label for="estatus" class="text-sm text-gray-700">Estatus</label>
+                        {{ form.estatus(class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-blue-500", readonly=True) }}
+
+                        <br>
+                        <br>
+                        <!-- Botón de Modificar -->
+                        <button type="submit" name="eliminar" 
+        class="w-full px-3 py-2 bg-primary text-white font-medium rounded-md hover:bg-green-700 focus:ring-green-500">
+    Eliminar
+</button>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Mensajes Flash -->
+            <div class="px-6 pb-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="p-3 mb-3 rounded-md {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</body>
+
+{% endblock %}

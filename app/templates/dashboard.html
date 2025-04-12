@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+{% include "header.html" %}
+
+<!-- Añade este estilo para solucionar el problema de z-index -->
+<style>
+    .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000; /* Asegura que el header esté por encima de todo */
+        background-color: white; /* Fondo sólido para que cubra el contenido */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Sombra para mejor visualización */
+    }
+    
+    .container {
+        margin-top: 80px; /* Ajusta según la altura de tu navbar */
+    }
+    
+    .galleta-card {
+        position: relative;
+        z-index: 1; /* Valor bajo para que no supere al navbar */
+    }
+</style>
+
+<div class="container flex flex-col lg:flex-row gap-8">
+    <!-- Sección principal -->
+    <div class="mt-16 mx-auto px-4 w-full lg:w-2/3 p-10">
+        <div class="max-w-4xl mx-auto bg-tertiary p-6 rounded-lg shadow-lg">
+            <h1 class="text-2xl font-bold mb-8">Dashboard</h1>
+
+            <!-- Tarjeta de resumen -->
+            <div class="mb-10 bg-white p-8 rounded-2xl shadow">
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <div class="flex-grow space-y-3">
+                        <h2 class="text-xl font-semibold">Ventas Diarias</h2>
+                        <p class="text-3xl font-bold text-green-600">${{ "%.2f"|format(total_ventas) }}</p>
+                        <div class="space-y-1">
+                            <p class="text-gray-600">Ventas de ayer: ${{ "%.2f"|format(venta_pasada) }}</p>
+                            <p class="text-sm {% if diferencia_porcentual >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                                {% if diferencia_porcentual >= 0 %}+{% endif %}{{ "%.2f"|format(diferencia_porcentual) }}% vs ayer
+                            </p>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-[420px] h-[180px]">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Galletas más vendidas -->
+            <div class="mb-10">
+                <h1 class="text-2xl font-bold mb-8">Galletas + Vendidas</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {% for item in sales_data %}
+                    <div class="galleta-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg  transition-shadow">
+                        <div class="relative h-48 bg-gray-100 flex items-center justify-center">
+                            <div class="absolute top-2 left-2 w-10 h-10 flex items-center justify-center rounded-full 
+                                        {% if loop.index == 1 %}bg-yellow-400{% elif loop.index == 2 %}bg-gray-400{% else %}bg-amber-600{% endif %} 
+                                        text-white font-bold text-sm">
+                                {{ loop.index }}
+                            </div>
+                            <img src="{{ item.image }}" class="w-full h-full object-cover"
+                                onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'"
+                                alt="{{ item.label }}">
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <h3 class="text-lg font-semibold text-gray-800 truncate">{{ item.label }}</h3>
+                            <p class="text-gray-600">Piezas vendidas: {{ "{:,}".format(item.data) }}</p>
+                            <p class="text-gray-600 font-medium">Total: ${{ "%.2f"|format(item.total_ventas) }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Sección de galleta menos vendida -->
+            <div id="least-sold-section" class="bg-white p-6 rounded-xl shadow-md border-l-4 border-red-500">
+                <h2 class="text-xl font-bold mb-4 text-gray-800">Análisis de Ventas</h2>
+                <div id="least-sold-container" class="flex flex-col md:flex-row gap-6">
+                    <!-- Contenido se cargará dinámicamente -->
+                    <p class="text-gray-500">Cargando información de galleta menos vendida...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menú lateral -->
+    <div class="mt-16 mx-auto px-4 w-100 p-10 space-y-6">
+        <!-- Tarjeta Producción -->
+        <div class="group w-full border-2 border-white rounded-2xl shadow-xl bg-purple-300 hover:bg-violet-400 transition-all duration-200 p-8">
+            <svg class="row-1 w-40 h-40 text-gray-800 group-hover:text-white mx-auto" aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2"
+                    d="M8.65692 9.41494h.01M7.27103 13h.01m7.67737 1.9156h.01M10.9999 17h.01m3.178-10.90671c-.8316.38094-1.8475.22903-2.5322-.45571-.3652-.36522-.5789-.82462-.6409-1.30001-.0574-.44-.0189-.98879.1833-1.39423-1.99351.20001-3.93304 1.06362-5.46025 2.59083-3.51472 3.51472-3.51472 9.21323 0 12.72793 3.51471 3.5147 9.21315 3.5147 12.72795 0 1.5601-1.5602 2.4278-3.5507 2.6028-5.5894-.2108.008-.6725.0223-.8328.0157-.635.0644-1.2926-.1466-1.779-.633-.3566-.3566-.5651-.8051-.6257-1.2692-.0561-.4293.0145-.87193.2117-1.26755-.1159.20735-.2619.40237-.4381.57865-1.0283 1.0282-2.6953 1.0282-3.7235 0-1.0282-1.02824-1.0282-2.69531 0-3.72352.0977-.09777.2013-.18625.3095-.26543" />
+            </svg>
+            <a href="/produccion" class="flex flex-col items-center w-full h-full">
+                <p class="font-bold text-2xl text-gray-800 group-hover:text-white text-center w-full">Producción</p>
+            </a>
+        </div>
+
+        <!-- Tarjeta Inventario -->
+        <div class="group w-full border-2 border-white rounded-2xl shadow-xl bg-purple-300 hover:bg-violet-400 transition-all duration-200 p-8">
+            <svg class="row-1 w-40 h-40 text-gray-800 group-hover:text-white mx-auto" aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1"
+                    d="M15.583 8.445h.01M10.86 19.71l-6.573-6.63a.993.993 0 0 1 0-1.4l7.329-7.394A.98.98 0 0 1 12.31 4l5.734.007A1.968 1.968 0 0 1 20 5.983v5.5a.992.992 0 0 1-.316.727l-7.44 7.5a.974.974 0 0 1-1.384.001Z" />
+            </svg>
+            <a href="/inventario" class="flex flex-col items-center w-full h-full">
+                <p class="font-bold text-2xl text-gray-800 group-hover:text-white text-center w-full">Inventario</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Configuración del gráfico
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesData = {
+            labels: [
+                {% for item in sales_data %}
+                    "{{ item.label }}"{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Piezas Vendidas',
+                data: [
+                    {% for item in sales_data %}
+                        {{ item.data }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                backgroundColor: [
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(54, 162, 235, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)'
+                ],
+                borderWidth: 1,
+                barPercentage: 0.6
+            }]
+        };
+
+        const salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: salesData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw.toLocaleString('es-MX')} piezas`;
+                            },
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                const total = [
+                                    {% for item in sales_data %}
+                                        {{ item.total_ventas }}{% if not loop.last %},{% endif %}
+                                    {% endfor %}
+                                ][index];
+                                return `Total vendido: $${total.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Piezas Vendidas',
+                            font: {
+                                size: 14
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('es-MX');
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // Cargar datos de la galleta menos vendida
+        fetch('/api/least_sold_cookie')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('least-sold-container');
+                
+                if (data.status === 'success' && data.data) {
+                    const cookie = data.data;
+                    container.innerHTML = `
+                        <div class="flex-1 bg-red-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-red-700 mb-3">Galleta Menos Vendida</h3>
+                            <div class="flex items-center gap-4">
+                                <div class="relative w-20 h-20 flex-shrink-0">
+                                    <img src="${cookie.image}" class="w-full h-full object-cover rounded-lg"
+                                        onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'"
+                                        alt="${cookie.nombre_galleta}">
+                                    <div class="absolute -top-2 -left-2 w-8 h-8 flex items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold">
+                                        !
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-800">${cookie.nombre_galleta}</h4>
+                                    <p class="text-sm text-gray-600">${cookie.total_vendido.toLocaleString('es-MX')} piezas</p>
+                                    <p class="text-sm font-medium">$${cookie.total_ventas.toFixed(2)}</p>
+                                    ${cookie.total_vendido < 10 ? 
+                                        '<span class="inline-block mt-1 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">Bajo desempeño</span>' 
+                                        : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-blue-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-blue-700 mb-3">Recomendación</h3>
+                            ${cookie.total_vendido < 10 ? 
+                                `<p class="text-gray-700">Considera promocionar <strong>${cookie.nombre_galleta}</strong> o revisar su receta para mejorar su aceptación.</p>` 
+                                : '<p class="text-gray-700">Todas las galletas tienen buenos niveles de venta.</p>'}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="w-full text-center py-4">
+                            <p class="text-gray-500">${data.message || 'No hay datos de galletas vendidas disponibles'}</p>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar la galleta menos vendida:', error);
+                document.getElementById('least-sold-container').innerHTML = `
+                    <div class="w-full text-center py-4">
+                        <p class="text-red-500">Error al cargar la información de la galleta menos vendida</p>
+                    </div>
+                `;
+            });
+    });
+</script>
+{% endblock %}

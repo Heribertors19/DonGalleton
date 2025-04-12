@@ -1,0 +1,67 @@
+<!-- templates/stock/sugerir_ordenes.html -->
+{% extends "base.html" %} {% block title %}Produccion{% endblock %} {% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+    </div>
+</header>
+
+<!-- Contenido -->
+<main class="pt-24 px-6 p-mermas">
+    <h2 class="text-2xl text-center font-semibold text-gray-800 mb-6 p-mermas-title">Tipos de galleta con stock bajo</h2>
+
+    <!-- Tabla de Stock con bordes redondeados y encabezados a ancho completo -->
+    <div class="rounded-lg overflow-hidden">
+        <table class="w-full bg-tertiary border border-gray-300 text-center border-separate border-spacing-y-2">
+            <thead class="bg-primary text-dark-gray border-2 border-dark-gray">
+                <tr>
+                    <th class="py-3 px-4 text-center w-1/5">Tipo</th>
+                    <th class="py-3 px-4 text-center w-1/5">Stock Actual</th>
+                    <th class="py-3 px-4 text-center w-1/5">Stock Mínimo</th>
+                    <th class="py-3 px-4 text-center w-1/5">Déficit</th>
+                    <th class="py-3 px-4 text-center w-1/5">Acción</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-300 space-y-2">
+                {% for tipo in tipos %}
+                <tr class="border-2 border-dark-gray ">
+                    <td class="p-4">{{ tipo.nombre }}</td>
+                    <td class="p-4">{{ tipo.stock_actual }}</td>
+                    <td class="p-4">{{ tipo.stock_minimo }}</td>
+                    <td class="p-4">
+                        {{ tipo.stock_minimo - (tipo.stock_actual or 0) }}
+                    </td>
+                    <td class="p-4">
+                        <a href="{{ url_for('produccion.crear_orden', id_tipo=tipo.idTipoGalleta) }}" class="inline-block border-2 border-dark-gray bg-primary hover:bg-dark-gray text-dark-gray font-bold py-3 px-4 rounded-lg shadow-md transition">
+                            Crear Orden
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="py-4 text-center text-green-600 font-medium bg-gray-100 rounded-b-lg shadow-md">
+                        ¡No hay stock bajo!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+
+{% endblock %}

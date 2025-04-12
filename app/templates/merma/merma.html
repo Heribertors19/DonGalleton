@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block title %}Registro de Mermas - Don Galletto{% endblock %} {% block content %}
+{% include "header2.html" %}
+<!-- Contenido principal -->
+<div class="bg-secondary min-h-screen flex flex-col items-center justify-center p-mermas">
+    <h1 class="text-center text-3xl p-mermas-title font-bold">Registro de mermas</h1>
+
+    <div class="flex justify-normal w-full max-w-4xl">
+        <!-- Botón para Galletas -->
+        <button onclick="window.location.href='{{ url_for('mermas.mostrar_galletas_merma') }}'" class="boton-merma bg-primary rounded-lg border-2 border-dark-gray p-8 hover:bg-dark-gray flex flex-col items-center justify-center w-1/2">
+    <div class="w-32 h-32 mb-4 flex items-center justify-center overflow-hidden relative">
+        <!-- Imagen normal -->
+        <img src="{{ url_for('static', filename='img/galleta_completa-merma.png') }}" alt="Galletas" class="imagen-normal  w-full h-full">
+        <!-- Imagen hover -->
+        <img src="{{ url_for('static', filename='img/galleta_quebrada_merma.png') }}" alt="Galletas Hover" class="imagen-hover  w-full h-full hidden">
+    </div>
+    <span class="text-dark-gray text-4xl font-bold">Galletas</span>
+</button>
+
+        <!-- Espacio en blanco (separación) -->
+        <div class="w-8" style="width: 90px;"></div>
+
+        <!-- Botón para Insumos -->
+        <button onclick="window.location.href='{{ url_for('mermas.registrar_merma_insumos') }}'" class="boton-merma bg-primary rounded-lg border-2 border-dark-gray p-8 hover:bg-dark-gray flex flex-col items-center justify-center w-1/2">
+    <div class="w-32 h-32 mb-4 flex items-center justify-center overflow-hidden relative">
+        <!-- Imagen normal -->
+        <img src="{{ url_for('static', filename='img/Leche.png') }}" alt="Insumos" class="imagen-normal  w-full h-full">
+        <!-- Imagen hover -->
+        <img src="{{ url_for('static', filename='img/Leche_tirada.png') }}" alt="Insumos Hover" class="imagen-hover  w-full h-full hidden">
+    </div>
+    <span class="text-black text-4xl font-bold">Insumos</span>
+</button>
+    </div>
+</div>
+<style>
+    .boton-merma:hover .imagen-normal {
+        display: none;
+    }
+    
+    .boton-merma:hover .imagen-hover {
+        display: block;
+    }
+</style>
+
+{% endblock %}

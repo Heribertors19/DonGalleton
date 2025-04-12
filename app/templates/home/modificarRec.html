@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Recetas{% endblock %}
+
+{% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+        <h1 class="text-center text-3xl text-white font-bold py-3">Mr. Cookie</h1>
+        <div class="flex items-center">
+            <img src="../static/img/profile-user.png" alt="User " class="h-10 w-10 rounded-full">
+            <p class="text-white ml-2">{{ current_user.nombre }}</p>
+        </div>
+        {% if current_user.ultima_sesion %}
+        <p class="text-white text-sm">Último inicio de sesión: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        {% else %}
+        <p class="text-white text-sm">Este es tu primer inicio de sesión.</p>
+        {% endif %}
+        <a href="{{ url_for('home.home') }}" class="bg-red-600 text-white py-2 px-4 rounded-md ml-4">Menu</a>
+    </div>
+</header>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Receta</title>
+</head>
+<body class="bg-gray-100">
+<br>
+<br>
+<br>
+    <div class="container mx-auto p-6">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="bg-{{ category }}-100 border-l-4 border-{{ category }}-500 text-{{ category }}-700 p-4" role="alert">
+                            <p>{{ message }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" class="bg-tertiary shadow-lg rounded-lg p-8 mb-4">
+            {{ form.hidden_tag() }}
+            <h1 class="text-4xl font-bold mb-6 text-black text-center">Modificar Receta</h1>
+            <div class="flex">
+                <!-- Sección de los ingredientes a la izquierda -->
+                <div class="w-1/2 pr-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Datos de la Receta</h2>
+                    
+                    
+    <div class="mb-4">
+        {{ form.nombre.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.nombre(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Nombre de la receta") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.galletasProducidas.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.galletasProducidas(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Número de galletas producidas") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.pesoIndividualGalleta.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.pesoIndividualGalleta(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Peso de una galleta") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.tiempoCoccion.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.tiempoCoccion(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Tiempo de cocción en minutos") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.nombreGalleta.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.nombreGalleta(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Nombre de la galleta") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.stock_minimo.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.stock_minimo(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Stock mínimo de la galleta") }}
+    </div>
+
+    <div class="mb-4">
+        {{ form.costo.label(class="block text-gray-700 font-bold mb-2") }}
+        {{ form.costo(class="bg-primary text-gray-800 rounded-lg p-3 w-full", placeholder="Costo") }}
+    </div>
+                
+
+    <h2 class="text-2xl font-bold mt-8 mb-4 text-gray-800 border-b pb-2">Ingredientes</h2>
+
+    <div id="ingredientes-container">
+        {% for entry in form.ingredientes %}
+            <div class="mb-4 space-y-4">
+                <div class="flex space-x-4">
+                    <div class="w-1/2">
+                        <label class="block text-gray-700 font-bold mb-2">Insumo</label>
+                        <select name="ingredientes[{{ loop.index0 }}][insumo]" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full">
+                            <option value="" disabled selected>Seleccionar Insumo</option>
+                            {% for insumo_id, insumo_nombre in insumos %}
+                                <option value="{{ insumo_id }}" {% if insumo_id == entry.form.insumo.data %} selected {% endif %}>{{ insumo_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="w-1/4">
+                        <label class="block text-gray-700 font-bold mb-2">Cantidad</label>
+                        <input type="number" name="ingredientes[{{ loop.index0 }}][cantidad]" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full" placeholder="Cantidad" value="{{ entry.form.cantidad.data }}">
+                    </div>
+                    
+                    <div class="w-1/4">
+                        <label class="block text-gray-700 font-bold mb-2">Unidad</label>
+                        <select name="ingredientes[{{ loop.index0 }}][unidadMedida]" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full">
+                            <option value="" disabled selected>Unidad</option>
+                            {% for unidad_id, unidad_nombre in unidades %}
+                                <option value="{{ unidad_id }}" {% if unidad_id == entry.form.unidadMedida.data %} selected {% endif %}>{{ unidad_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="button" id="eliminar_ingrediente" class="remove-ingredient bg-tertiary hover:bg-pink-700 text-black rounded-lg px-4 py-2">Eliminar</button>
+                <div class="border-b border-gray-200 my-4"></div>
+            </div>
+        {% endfor %}
+    </div>
+    
+
+                    <button type="button" id="add-ingredient" class="bg-primary hover:bg-pink-700 text-black rounded-lg px-4 py-2 mt-4">+</button>
+                </div>
+
+                <!-- Línea separadora vertical -->
+                <div class="separator"></div>
+
+                <!-- Sección de imagen a la derecha -->
+                <div class="w-1/2 pl-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">Imagen de la Receta</h2>
+                    
+                    <div class="mb-4">
+                        <label for="imagen" class="block text-gray-700 font-bold mb-2">Subir Imagen</label>
+                        <input type="file" name="imagen" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full" accept="image/*">
+                    </div>
+                    
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-600">Arrastra y suelta una imagen o haz clic</p>
+                    </div>
+                    <div class="mb-4">
+                        {{ form.instrucciones.label(class="block text-gray-700 font-bold mb-2") }}
+                        {{ form.instrucciones(class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full h-32", rows=10) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 text-center">
+                <button type="submit" class="bg-primary text-black rounded-lg px-6 py-3 text-lg font-bold">Guardar Receta</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('add-ingredient').addEventListener('click', function() {
+            const container = document.getElementById('ingredientes-container');
+            const index = container.children.length;
+            
+            const newIngredient = document.createElement('div');
+            newIngredient.className = 'mb-4 space-y-4';
+            newIngredient.innerHTML = `
+                <div class="flex space-x-4">
+                    <div class="w-1/2">
+                        <label class="block text-gray-700 font-bold mb-2">Insumo</label>
+                        <select name="ingredientes-${index}-insumo" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full">
+                            <option value="" disabled selected>Seleccionar Insumo</option>
+                            {% for insumo_id, insumo_nombre in insumos %}
+                                <option value="{{ insumo_id }}">{{ insumo_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="w-1/4">
+                        <label class="block text-gray-700 font-bold mb-2">Cantidad</label>
+                        <input type="number" name="ingredientes-${index}-cantidad" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full" placeholder="Cantidad" required>
+                    </div>
+                    
+                    <div class="w-1/4">
+                        <label class="block text-gray-700 font-bold mb-2">Unidad</label>
+                        <select name="ingredientes-${index}-unidadMedida" class="bg-gray-100 text-gray-800 rounded-lg p-3 w-full">
+                            <option value="" disabled selected>Unidad</option>
+                            {% for unidad_id, unidad_nombre in unidades %}
+                                <option value="{{ unidad_id }}">{{ unidad_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="button" class="remove-ingredient bg-red-500 hover:bg-red-600 text-white rounded-lg px-4 py-2">Eliminar</button>
+                <div class="border-b border-gray-200 my-4"></div>
+            `;
+            
+            container.appendChild(newIngredient);
+            
+            // Agregar evento al nuevo botón de eliminar
+            newIngredient.querySelector('.remove-ingredient').addEventListener('click', function() {
+                container.removeChild(newIngredient);
+            });
+        });
+
+        // Agregar eventos a los botones de eliminar existentes
+        document.querySelectorAll('.remove-ingredient').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.mb-4').remove();
+            });
+        });
+    </script>
+</body>
+{% endblock %}

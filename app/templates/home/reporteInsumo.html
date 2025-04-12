@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa alineado a la izquierda -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <h1 class="text-center text-3xl p-3 font-bold">Mr. cookie</h1>
+
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="../static/img/profile-user.png" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+        <!-- Ejemplo en el template de home o perfil de usuario -->
+        {% if current_user.ultima_sesion %}
+        <p>Último inicio de sesión: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        {% else %}
+        <p>Este es tu primer inicio de sesión.</p>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Cerrar Sesión</a>
+    </div>
+</header>
+
+<br><br><br>
+<div class="flex justify-between items-center mb-6">
+    <div class="w-1/2">
+        <input type="text" id="searchInput" onkeyup="filterTable()" 
+           class="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+           placeholder="Buscar Insumos...">
+    </div>
+    <a href="{{ url_for('insumo.registroInsumo') }}" class="bg-primary hover:bg-pink-700 text-black px-4 py-2 text-center rounded-lg ml-4 whitespace-nowrap" style="padding-right: 2mm;">
+        <i class="fas fa-shop"></i> Registrar Insumo
+    </a>
+</div>
+
+
+
+<div class="min-h-screen flex items-start justify-center mt-24">
+    <div class="bg-tertiary shadow-lg rounded-xl p-6 max-w-4xl w-full">
+        <h2 class="text-3xl font-bold text-black text-center mb-6 flex items-center justify-center space-x-2">
+            <i class="fas fa-products"></i>
+            <span>Reporte de Insumos</span>
+            <i class="fas fa-products"></i>
+        </h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <p class="text-sm text-red-500">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Tabla de Usuarios -->
+        <div class="overflow-x-auto">
+            <table class="table-auto w-full border-collapse border border-gray-300 rounded-md" id="insumoTable">
+                <thead>
+                    <tr class="bg-primary text-black text-lg">
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Nombre</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Precio Actual</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Nombre Proveedor</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Nombre Presentacion</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Nombre unidad Base</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for insumo in insumo %}
+                    <tr class="border-b border-gray-300 hover:bg-pink-50 transition duration-200">
+                        <td class="py-4 px-6 border-r border-gray-300">{{ insumo.nombre }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ insumo.precioActual }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ insumo.proveedor.nombre}}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ insumo.presentacionInsumo.nombre }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ insumo.presentacionInsumo.equivalenciaUnidadBase }}</td>
+                        <td class="py-4 px-6 flex space-x-3">
+                            <a href="{{url_for('insumo.modificarI', idInsumo=insumo.idInsumo)}}" class="text-black hover:text-blue-700">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{url_for('insumo.eliminarI', idInsumo=insumo.idInsumo)}}" class="text-black hover:text-red-700">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('insumoTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let found = false;
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j]) {
+                    const textValue = cells[j].textContent || cells[j].innerText;
+                    if (textValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            rows[i].style.display = found ? '' : 'none';
+        }
+    }
+</script>
+
+{% endblock %}

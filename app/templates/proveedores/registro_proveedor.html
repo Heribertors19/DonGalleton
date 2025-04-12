@@ -1,0 +1,84 @@
+{% extends "base.html" %} {% block title %}Proveedores{% endblock %} {% block content %}{% include "header.html" %}
+<!--Contenedor primcipal-->
+<!-- registro_proveedor.html -->
+<div class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-mermas gap-10">
+    <!-- Formulario -->
+    <div class="w-full lg:w-1/2 flex flex-col items-center">
+        <h1 class="text-3xl mb-6 font-bold text-dark-gray text-center p-mermas">Registro de Nuevo Proveedor</h1>
+        <div class="rounded-lg border-2 bg-tertiary w-full max-w-md">
+            <form action="{{ url_for('proveedores.nuevo_proveedor') }}" method="POST" id="form-proveedor" method="POST" class="w-full bg-tertiary p-6 rounded-lg shadow-md space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Nombre -->
+                <div class="flex flex-col">
+                    <label for="nombre" class="mb-1 text-center font-bold">Nombre</label>
+                    <input id="nombre" type="text" name="nombre" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-nombre">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Teléfono -->
+                <div class="flex flex-col">
+                    <label for="telefono" class="mb-1 text-center font-bold">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" class="w-full border px-4 py-2 rounded-lg border-2" pattern="(\(\d{3}\)\s?)?\d{3}[-]?\d{4}" maxlength="14" required placeholder="(123) 456-7890">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-telefono">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Dirección -->
+                <div class="flex flex-col">
+                    <label for="direccion" class="mb-1 text-center font-bold">Dirección</label>
+                    <input id="direccion" type="text" name="direccion" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-direccion">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Email -->
+                <div class="flex flex-col">
+                    <label for="email" class="mb-1 text-center font-bold">Email</label>
+                    <input id="email" type="email" name="email" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-email">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Botón -->
+                <div class="flex justify-center p-4">
+                    <button type="submit" class="bg-primary text-dark-gray p-2 rounded-lg font-bold border-2 hover:bg-dark-gray">
+                        Registrar proveedor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Consejo motivacional -->
+    <div class="w-full lg:w-1/2 flex justify-center items-center">
+        <div class="bg-white border-l-4 border-primary p-6 rounded-lg shadow-xl max-w-md text-center">
+            <h2 class="text-2xl font-bold mb-4 text-dark-gray">💡 Consejo</h2>
+            <p class="text-lg text-gray-700 italic">
+                “Un buen proveedor no solo entrega productos, también construye confianza y fortalece el crecimiento de tu negocio.”
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('form-proveedor').addEventListener('submit', function(e) {
+        let isValid = true;
+
+        // Validación de campos requeridos
+        ['nombre', 'telefono', 'direccion', 'email'].forEach(function(campo) {
+            const input = document.getElementById(campo);
+            const error = document.getElementById('error-' + campo);
+
+            if (!input.value.trim()) {
+                error.classList.remove('hidden');
+                isValid = false;
+            } else {
+                error.classList.add('hidden');
+            }
+        });
+
+        // Prevenir envío si hay errores
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+</script>
+
+{% endblock %}

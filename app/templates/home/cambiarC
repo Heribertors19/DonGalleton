@@ -1,0 +1,20 @@
+<!-- modificar_contrasenia.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Cambiar Contraseña</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div>
+            <label for="nueva_contrasenia">Nueva Contraseña</label>
+            {{ form.nueva_contrasenia() }}
+        </div>
+        <div>
+            <label for="confirmar_contrasenia">Confirmar Contraseña</label>
+            {{ form.confirmar_contrasenia() }}
+        </div>
+        <div>
+            {{ form.submit() }}
+        </div>
+    </form>
+    
+{% endblock %}

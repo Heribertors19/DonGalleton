@@ -1,0 +1,6 @@
+projectKey=Mr_cookies
+serverUrl=http://localhost:9000
+serverVersion=25.3.0.104237
+dashboardUrl=http://localhost:9000/dashboard?id=Mr_cookies
+ceTaskId=f52da2a9-abf2-4b01-84e6-fd457752b9b1
+ceTaskUrl=http://localhost:9000/api/ce/task?id=f52da2a9-abf2-4b01-84e6-fd457752b9b1

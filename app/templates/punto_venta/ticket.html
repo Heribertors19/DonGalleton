@@ -1,0 +1,184 @@
+{% extends "base.html" %} {% block content %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket de Venta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .ticket {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .ticket h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .ticket img {
+            height: 40px;
+            max-width: 40px;
+            object-fit: contain;
+        }
+        /* Estilo específico para impresión */
+        
+        @media print {
+            .ticket img {
+                height: 30px;
+                /* Ajusta el tamaño de la imagen para impresión */
+                max-width: 100%;
+                object-fit: contain;
+            }
+        }
+        
+        .ticket p {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+        
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        
+        table th,
+        table td {
+            text-align: center;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        table th {
+            background-color: #f0f0f0;
+        }
+        
+        .subtotal {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        .print-button,
+        .back-button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .print-button:hover,
+        .back-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ticket">
+        <h1>
+            <img src="/static/img/logo2.png" style="height: 30px; width: 40px; " alt="Logo MR. COOKIES">
+            <!-- Imagen al lado del título -->
+            MR. COOKIES
+        </h1>
+        <p><strong>Total:</strong> ${{ venta.precioTotal }}</p>
+
+        <h2>Detalles de la Compra:</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Galleta</th>
+                    <th>Cantidad</th>
+                    <th>Venta por</th>
+                    <th>Equivalencia</th>
+                    <th>Precio Unitario</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in venta.detalles %}
+                <tr>
+                    <td>{{ detalle.tipo_galleta.nombre }}</td>
+                    <td>{{ detalle.cantidad }}</td>
+                    <td>
+                        {% if detalle.tiposVentaNombre == 'paquete_700gr' %} paq 700gr {% elif detalle.tiposVentaNombre == 'paquete_1kg' %} kilo {% else %} {{ detalle.tiposVentaNombre }} {% endif %}
+                    </td>
+                    <td>{{ detalle.ventaEquivalenciaPiezas }} galletas</td>
+                    <td>${{ "%.2f"|format(detalle.costoActual) }}</td>
+                    <td>${{ "%.2f"|format(detalle.cantidad * detalle.costoActual) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p class="subtotal">Total: ${{ venta.precioTotal }}</p>
+
+        <button class="font-bold p-4 text-dark-gray  bg-primary rounded-lg border-2 border-dark-gray hover:bg-dark-gray" onclick="printTicket()">Imprimir</button>
+        <button class="font-bold p-4 text-white  bg-red rounded-lg border-2 border-dark-gray hover:bg-dark-gray" onclick="window.location.href='{{ url_for('punto_venta.interfaz_venta') }}'">Regresar</button>
+    </div>
+
+    <script>
+        // Bloquear la recarga de la página
+        window.onbeforeunload = function(event) {
+            // Esto evita la recarga de la página al mostrar un mensaje de advertencia
+        };
+
+        // Bloquear la función de retroceso y avance del navegador
+        window.history.pushState(null, null, window.location.href);
+        window.onpopstate = function() {
+            window.history.pushState(null, null, window.location.href);
+        };
+
+        // También bloquear el avance en el historial
+        window.history.forward();
+
+        function printTicket() {
+            const printWindow = window.open('', '', 'height=500,width=400');
+
+            // Crear el contenido de la ventana de impresión sin los botones
+            const ticketContent = document.querySelector('.ticket').outerHTML;
+
+            // Eliminar los botones del contenido
+            const div = document.createElement('div');
+            div.innerHTML = ticketContent;
+            const buttons = div.querySelectorAll('button');
+            buttons.forEach(button => button.remove());
+
+            // Escribir el contenido modificado en la ventana emergente
+            printWindow.document.write('<html><head><title>Ticket de Venta</title>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(div.innerHTML); // Escribir el contenido sin los botones
+            printWindow.document.write('</body></html>');
+
+            printWindow.document.close();
+            printWindow.print();
+        }
+    </script>
+</body>
+
+</html>
+{% endblock %}

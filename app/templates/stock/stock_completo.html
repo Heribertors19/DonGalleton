@@ -1,0 +1,147 @@
+{% extends 'base.html' %} {% block title %}Stock{% endblock %}{% block content %}
+{% include "header2.html" %}
+<main class="mt-20 p-content">
+    <!-- Galletas en formato de catálogo -->
+    <div class="rounded-lg bg-tertiary">
+        <h1 class="py-4 text-center text-3xl font-bold">Stock</h1>
+        <!-- Filtro y búsqueda -->
+        <!-- Filtro y búsqueda -->
+        <div class="border-b-2 rounded-lg border-dark-gray p-4">
+            <form method="GET" action="{{ url_for('stock.cookie_stock') }}">
+                <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+                    <input class="border-2 border-dark-gray rounded-lg w-search p-2" type="text" name="search" placeholder="Buscar galleta..." value="{{ request.args.get('search', '') }}" oninput="this.form.submit()">
+                    <!-- Envía automáticamente el formulario al escribir -->
+
+                    <label for="tipo">Tipo de Galleta:</label>
+                    <select name="tipo" id="tipo" class="border-2 border-dark-gray rounded-lg p-2" onchange="this.form.submit()">
+                <option value="">Todas...</option>
+                {% for tipo in tipos_galletas %}
+                    <option value="{{ tipo.idTipoGalleta }}" 
+                        {% if tipo.idTipoGalleta == request.args.get('tipo') %} selected {% endif %}>
+                        {{ tipo.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+
+                    <button type="submit" class="w-46 bg-primary text-dark-gray border-2 rounded-lg p-2 hover:bg-dark-gray">
+                Buscar
+            </button>
+                </div>
+            </form>
+        </div>
+
+
+        <ul class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
+            {% for g in galletas %}
+            <li>
+                <!-- Enlace que simula el botón para abrir detalles -->
+                <a href="#modal-{{ g.id }}" class="w-full flex flex-col rounded-lg border-2 transition-shadow overflow-hidden hover:bg-dark-gray">
+                    <!-- Contenedor principal de imagen -->
+                    <div class="relative w-full h-[120px] md:h-[150px] lg:h-[180px] bg-gray-50">
+                        <!-- Imagen centrada -->
+                        <div class="inset-0 flex items-center justify-center p-2">
+                            <img src="{{ g.imagen }}" class="max-h-full rounded-lg max-w-full object-contain h-img" onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'" alt="{{ g.nombre }}">
+                        </div>
+
+                        <!-- Indicador de stock -->
+                        <div class="z-30 absolute top-2 right-2 w-5 h-5 rounded-full border-2
+                        {% if g.stock < 100 %}bg-red
+                        {% elif g.stock < 150 %}bg-yellow
+                        {% else %}bg-green{% endif %}">
+                        </div>
+                    </div>
+
+                    <!-- Información de la galleta -->
+                    <div class="p-3 text-center border-t border-gray-100">
+                        <h3 class="font-medium text-gray-800 truncate">{{ g.nombre }}</h3>
+                        <div class="flex justify-between mt-2 text-sm">
+                            <span class="{% if g.stock < 100 %}text-red font-semibold{% endif %}">
+                            Stock: {{ g.stock }}
+                        </span>
+                            <span class="text-gray-700">{{ g.costo }}</span>
+                        </div>
+                    </div>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- Modales para cada galleta - VERSIÓN CORREGIDA -->
+    {% for g in galletas %}
+    <div id="modal-{{ g.id }}" class="p-mermas modal fixed absolute top-0 right-0 bottom-0 left-0 bg-dark-gray bg-opacity-90 z-30 hidden items-center justify-center" style="padding-top: 5%;">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 relative mx-4">
+            <!-- Encabezado del modal con título y botón cerrar alineados -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="font-bold text-xl">{{ g.nombre }}</h2>
+                <!-- Botón para cerrar el modal -->
+                <a href="#" class="border-2 rounded-lg bg-primary px-3 py-1  transition-colors">
+                    <span class="text-lg font-semibold text-dark-gray">Cerrar</span>
+                </a>
+            </div>
+
+            <div class="flex justify-center mb-4">
+                <img src="{{ g.imagen }}" onerror="this.onerror=null; this.src='{{ url_for('static', filename='img/default_cookie3.svg') }}'" alt="{{ g.nombre }}" class="h-img-modal rounded-lg">
+            </div>
+
+            <div class="space-y-2 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <p><span class=" font-semibold">Stock:</span> {{ g.stock }}</p>
+                    <p><span class="font-semibold">Peso:</span> {{ g.peso }}</p>
+                </div>
+                <p><span class="font-semibold">Precio:</span> {{ g.costo }}</p>
+            </div>
+
+            {% if g.stock
+            < 150 %} <form action="{{ url_for('stock.crear_orden') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="id_tipo_galleta" value="{{ g.id }}">
+                <button type="submit" class="border-2 rounded-lg block w-full bg-primary text-dark-gray py-2 font-bold text-center hover:bg-dark-gray transition-colors">
+                    Crear nueva orden
+                </button>
+                </form>
+
+                {% else %}
+                <button class="w-full bg-gray-300 text-gray-600 py-2 rounded-lg cursor-not-allowed" disabled>
+                    Stock suficiente
+                </button> {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</main>
+
+<style>
+    body {
+        padding-top: 80px;
+    }
+    /* Mostrar modal cuando es el target */
+    /* Estilos para el modal */
+    
+    .modal {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(75, 85, 99, 0.9);
+        /* dark-gray con 90% de opacidad */
+        z-index: 30;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal:target {
+        display: flex !important;
+    }
+    /* Ocultar modal por defecto */
+    
+    .modal {
+        display: none;
+    }
+    /* Estilo para el botón de crear orden */
+    
+    .bg-primary-dark {
+        background-color: #1a365d;
+    }
+</style>
+{% endblock %}

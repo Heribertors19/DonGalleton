@@ -1,0 +1,210 @@
+<!-- templates/produccion/detalle_orden.html -->
+{% extends "base.html" %} {% block title %}Produccion{% endblock %} {% block content %}
+{% include "header2.html" %}
+
+<div class="container mx-auto p-mermas-content">
+    <h1 class="text-center text-3xl font-bold">Producción</h1>
+    <!-- Tabla de Detalles con bordes redondeados correctos -->
+    <div class="p-mermas-title">
+
+        <div class="w-full bg-primary rounded-xl shadow-lg mb-8 overflow-hidden border-2 border-dark-gray">
+
+            <!-- Fila 1: Encabezados -->
+            <div class="flex border-b-2 rounded-lg border-dark-gray text-dark-gray font-bold">
+                <div class="w-1/2 p-4 bg-primary  rounded-lg border-r-2 border-dark-gray">
+                    Tipo de galleta: {{ lote.tipo_galleta.nombre }}
+                </div>
+                <div class="w-1/2 p-4 bg-primary rounded-lg">
+                    Cantidad: {{ detalle_receta.cantidad_producida }} ({{ detalle_receta.peso_individual }}g c/u)
+                </div>
+            </div>
+
+            <!-- Fila 2: Imagen e Ingredientes -->
+            <div class="flex border-b-2 ">
+                <!-- Columna Imagen -->
+                <!-- Columna Imagen -->
+                <div class="w-1/2 p-4 flex justify-center items-center border-r-2 bg-tertiary border-1 border-dark-gray">
+                    {% if imagen_base64 %}
+                    <img class="h-48 object-contain" src="data:image/jpeg;base64,{{ imagen_base64 }}" alt="{{ detalle_receta.nombre_galleta }}"> {% else %}
+                    <div class="text-center">
+                        <p>{{ detalle_receta.imagen_info }}</p>
+                        <p>Imagen no disponible</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Columna Ingredientes -->
+                <div class="w-1/2 p-4 bg-tertiary border-1 border-dark-gray">
+                    <div class="bg-tertiary p-4 rounded-lg  h-full">
+                        <h3 class="font-semibold text-gray-800 mb-3 text-center">Ingredientes:</h3>
+                        {% if ingredientes %}
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            {% for ingrediente in ingredientes %}
+                            <li class="flex items-start">
+                                <span class="text-center mt-1 w-2 h-2 bg-dark-gray rounded-full mr-2 font-bold"></span> {{ ingrediente }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="text-gray-500 text-center">No hay ingredientes disponibles.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Fila 3: Instrucciones (full width) -->
+            <div class="p-4 bg-tertiary">
+                <h3 class="font-bold text-center text-gray-800 mb-3">Instrucciones de Preparación:</h3>
+                <div class="space-y-2 text-sm text-gray-700 mx-auto max-w-2xl">
+                    {% for instruccion in detalle_receta.instrucciones.split('\n') %}
+                    <p> {{ instruccion }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- Barra de Progreso -->
+    <div class="w-full mb-8">
+        <div class="flex w-full rounded-lg overflow-hidden shadow-lg h-24">
+            <!-- Altura aumentada -->
+            {% for estado in estados %} {% set etapa_actual_index = estados.index(lote.estatus) %} {% set esta_etapa_index = estados.index(estado) %}
+
+            <form method="POST" action="{{ url_for('produccion.actualizar_etapa', id_lote=lote.idLoteGalleta) }}" class="flex-1 min-w-0">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="nuevo_estatus" value="{{ estado }}">
+
+                <button type="submit" class="w-full h-full border-2 border-dark-gray 
+                    {% if esta_etapa_index <= etapa_actual_index %} 
+                        bg-primary text-dark-gray 
+                    {% else %} 
+                        bg-white text-dark-gray border-dark-gray
+                    {% endif %}
+                    {% if loop.first %} rounded-l-xl {% endif %}
+                    {% if loop.last %} rounded-r-xl {% endif %}
+                    transition-all duration-200
+                    active:scale-95
+                    {% if esta_etapa_index > etapa_actual_index + 1 or lote.estatus == 'terminada' %} 
+                        opacity-70 cursor-not-allowed
+                    {% else %}
+                        hover:bg-opacity-90 active:bg-primary-dark
+                    {% endif %}" {% if esta_etapa_index> etapa_actual_index + 1 or lote.estatus == 'terminada'%}disabled{% endif %}>
+                    
+                    <div class=" inset-0 flex flex-col items-center justify-center p-2">
+                        <span class="block text-center text-lg mb-1">
+                            {{ estado|replace('_', ' ')|title }}
+                        </span>
+                        
+                        <div class="w-16 h-10 flex items-center justify-center">
+                            <img src="{{ url_for('static', filename='img/' ~ estado ~ '.svg') }}" 
+                                 class="w-full h-full object-contain opacity-90"
+                                 alt="{{ estado|replace('_', ' ')|title }}">
+                        </div>
+                    </div>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+
+        <!-- Indicador de progreso -->
+        <div class="mt-4 text-center text-xl font-bold">
+            PROGRESO: {{ ((estados.index(lote.estatus) + 1) / estados|length * 100)|round|int }}%
+        </div>
+    </div>
+    <!-- Botones de Merma -->
+    <div class="flex justify-center space-x-4 mb-8">
+        {% if lote.estatus in ['terminada'] %}
+        <a href="{{ url_for('mermas.mostrar_galletas_merma', id_lote=lote.idLoteGalleta) }}" class="inline-block border-2 border-dark-gray bg-primary hover:bg-dark-gray text-dark-gray font-bold py-3 px-4 rounded-lg shadow-md">
+            Registrar Merma Insumo
+        </a> {% endif %} {% if lote.estatus in ['terminada'] %}
+        <a href="{{ url_for('mermas.mostrar_galletas_merma', id_lote=lote.idLoteGalleta) }}" class="inline-block border-2 border-dark-gray bg-primary hover:bg-dark-gray text-dark-gray font-bold py-3 px-4 rounded-lg shadow-md">
+            Registrar Merma Galleta
+        </a> {% endif %}
+    </div>
+
+
+    <!-- Botón para ver otras órdenes (solo visible cuando está terminado) -->
+    {% if lote.estatus == 'terminada' %} {% if lote.cantidadProducida == 0 %}
+    <form method="POST" action="{{ url_for('produccion.terminar_orden', id_lote=lote.idLoteGalleta) }}" class="w-full px-4 py-4 mb-8 text-center">
+        <label for="galletas_buenas" class="block text-lg font-bold">Cantidad de Galletas Buenas (Máximo: {{ detalle_receta.cantidad_producida }})</label>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Campo de solo lectura con el valor de galletas buenas -->
+        <input type="number" name="galletas_buenas" id="galletas_buenas" class="border-2 border-dark-gray rounded-lg px-4 py-2 w-1/3 text-center" min="1" max="{{ lote.cantidad_objetivo }}" value="{{ detalle_receta.cantidad_producida }}" readonly>
+
+        <button type="submit" class="inline-block border-2 border-dark-gray bg-primary hover:bg-dark-gray text-dark-gray font-bold py-3 px-4 rounded-lg shadow-md mt-4">
+                Registrar Producción
+            </button>
+    </form>
+    {% else %}
+    <div class="w-full px-4 py-4 mb-8 text-center">
+        <p class="text-lg font-bold mb-4">Producción ya registrada</p>
+        <p class="mb-2">Cantidad producida: {{ lote.cantidadProducida }}</p>
+        <p class="mb-4">Objetivo: {{ lote.cantidad_objetivo }}</p>
+        <button class="inline-block border-2 border-dark-gray bg-gray-300 text-dark-gray font-bold py-3 px-4 rounded-lg shadow-md" disabled>
+                Producción Registrada
+            </button>
+    </div>
+    {% endif %} {% endif %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="px-4 py-3 mb-4 rounded shadow-lg 
+                    {% if category == 'danger' %}bg-red-100 border border-red-400 text-red-700
+                    {% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700
+                    {% endif %}">
+          <strong class="font-bold">
+            {% if category == 'danger' %}¡Error!{% elif category == 'success' %}¡Éxito!{% endif %}
+          </strong>
+          <span class="block sm:inline">{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+<style>
+    /* Estilos básicos */
+    
+    button {
+        transition: all 0.3s ease;
+    }
+    
+    button:disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+    
+    .flex-1 {
+        flex: 1 0 0%;
+    }
+    /* Efecto hover para botones activos */
+    
+    button:hover:not(:disabled) {
+        transform: translateY(10px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.507);
+    }
+    
+    .modal {
+        display: none;
+    }
+    
+    .modal:target {
+        display: flex;
+    }
+    
+    .modal {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(75, 85, 99, 0.9);
+        /* dark-gray con 90% de opacidad */
+        z-index: 30;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}

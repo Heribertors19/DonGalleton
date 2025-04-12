@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Recetas{% endblock %}
+
+{% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+        <h1 class="text-center text-3xl text-white font-bold py-3">Mr. Cookie</h1>
+        <div class="flex items-center">
+            <img src="../static/img/profile-user.png" alt="User" class="h-10 w-10 rounded-full">
+            <p class="text-white ml-2">{{ current_user.nombre }}</p>
+        </div>
+        {% if current_user.ultima_sesion %}
+        <p class="text-white text-sm">Último inicio de sesión: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        {% else %}
+        <p class="text-white text-sm">Este es tu primer inicio de sesión.</p>
+        {% endif %}
+        <a href="{{ url_for('home.home') }}" class="bg-red-600 text-white py-2 px-4 rounded-md ml-4">Menú</a>
+    </div>
+</header>
+<br>
+<br>
+<br>
+<br>
+<h1 class="text-4xl font-bold mb-6 text-black text-center">Modificar Receta</h1>
+<body class="bg-gray-100 min-h-screen">
+    <div class="pt-32 pb-10 flex justify-center px-4">
+        <form method="POST" enctype="multipart/form-data" class="w-full max-w-4xl bg-white p-8 rounded-2xl shadow-lg space-y-8">
+            {{ form.hidden_tag() }}
+
+            <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2">Datos de la Receta</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.nombre.label }}</label>
+                    {{ form.nombre(class="w-full mt-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400") }}
+                </div>
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.galletasProducidas.label }}</label>
+                    {{ form.galletasProducidas(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.pesoIndividualGalleta.label }}</label>
+                    {{ form.pesoIndividualGalleta(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.tiempoCoccion.label }}</label>
+                    {{ form.tiempoCoccion(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+                <div class="md:col-span-2">
+                    <label class="font-medium text-gray-600">{{ form.instrucciones.label }}</label>
+                    {{ form.instrucciones(class="w-full mt-1 px-4 py-2 border rounded-lg", rows=3) }}
+                </div>
+                <div class="md:col-span-2">
+                    <label class="font-medium text-gray-600">{{ form.imagen.label }}</label>
+                    {{ form.imagen(class="w-full mt-1") }}
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2">Tipo de Galleta</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.nombreGalleta.label }}</label>
+                    {{ form.nombreGalleta(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.stock_minimo.label }}</label>
+                    {{ form.stock_minimo(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+                <div>
+                    <label class="font-medium text-gray-600">{{ form.costo.label }}</label>
+                    {{ form.costo(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-semibold text-gray-700 border-b pb-2">Ingredientes</h2>
+            <div id="ingredientes-container" class="space-y-4">
+                {% for subform in form.ingredientes %}
+                    <div class="ingrediente-entry bg-gray-50 p-4 rounded-lg border flex flex-wrap gap-4 items-end">
+                        <div class="flex-1 min-w-[150px]">
+                            <label class="text-sm font-medium text-gray-600">{{ subform.insumo.label }}</label>
+                            {{ subform.insumo(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                        </div>
+                        <div class="flex-1 min-w-[100px]">
+                            <label class="text-sm font-medium text-gray-600">{{ subform.cantidad.label }}</label>
+                            {{ subform.cantidad(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                        </div>
+                        <div class="flex-1 min-w-[120px]">
+                            <label class="text-sm font-medium text-gray-600">{{ subform.unidadMedida.label }}</label>
+                            {{ subform.unidadMedida(class="w-full mt-1 px-4 py-2 border rounded-lg") }}
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 text-sm">Eliminar</button>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="text-center pt-6">
+                <button type="submit" class="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-orange-500 transition">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+
+{% endblock %}

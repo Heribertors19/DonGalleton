@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% include "header2.html" %}
+
+{% block content %}
+<div class="p-6">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">📦 Stock de Insumos</h2>
+
+    <div class="overflow-x-auto shadow-lg rounded-lg border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 bg-white">
+            <thead class="bg-primary text-black">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                        Insumo
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                        Precio
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                        Stock
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                        Presentación
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-sm font-semibold uppercase tracking-wider">
+                        Fecha de caducidad
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for s in stock %}
+                <tr class="hover:bg-gray-100 transition duration-200">
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-800">{{ s.nombre_insumo }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-green-600 font-medium">${{ '%.2f'|format(s.precio_unitario_actual) }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ s.stock_total }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-700">{{ s.nombre_presentacion }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-red-600">
+                        {{ s.fecha_caducidad_mas_proxima.strftime('%d/%m/%Y') if s.fecha_caducidad_mas_proxima else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

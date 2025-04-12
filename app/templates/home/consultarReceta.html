@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa alineado a la izquierda -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <h1 class="text-center text-3xl p-3 font-bold">Don Galleton</h1>
+
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="../static/img/profile-user.png" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+
+        <!-- Última sesión -->
+        {% if current_user.ultima_sesion %}
+            <p>Último inicio de sesión: {{ current_user.ultima_sesion.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        {% else %}
+            <p>Este es tu primer inicio de sesión.</p>
+        {% endif %}
+        
+        <!-- Botón de cierre de sesión -->
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Cerrar Sesión</a>
+    </div>
+</header>
+<br><br>
+<br><br>
+
+<body class="bg-tertiary flex justify-center leading-normal tracking-normal p-4">
+
+
+    <!-- Contenedor principal -->
+    <div class="max-w-4xl mx-auto mt-10 px-4">
+        <div class="bg-white shadow-lg rounded-lg p-8">
+
+            <!-- Título -->
+            <h1 class="text-4xl font-bold text-center text-gray-800 mb-6">{{ receta.nombre }}</h1>
+            
+            <!-- Información de la receta -->
+            <div class="mb-6">
+                <h3 class="text-2xl font-semibold text-gray-700">Tipo de Galleta</h3>
+                <p class="text-lg text-gray-600">{{ tipo_galleta.nombre }}</p>
+
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <p class="font-semibold text-gray-700">Stock mínimo:</p>
+                        <p class="text-gray-600">{{ tipo_galleta.stock_minimo }}</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-700">Costo de Producción:</p>
+                        <p class="text-gray-600">{{ tipo_galleta.costo_produccion }}</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-700">Costo Unitario:</p>
+                        <p class="text-gray-600">{{ tipo_galleta.costo_unitario }}</p>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-700">Costo Total:</p>
+                        <p class="text-gray-600">{{ tipo_galleta.costo }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="mb-6">
+                <h3 class="text-2xl font-semibold text-gray-700">Instrucciones:</h3>
+                <p class="text-gray-600">{{ receta.instrucciones }}</p>
+            </div>
+
+            <!-- Ingredientes -->
+            <div class="mb-6">
+                <h3 class="text-2xl font-semibold text-gray-700">Ingredientes:</h3>
+                <div class="overflow-x-auto bg-gray-100 p-4 rounded-lg">
+                    <table class="min-w-full table-auto text-left">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th class="px-4 py-2 font-semibold text-gray-600">Insumo</th>
+                                <th class="px-4 py-2 font-semibold text-gray-600">Cantidad</th>
+                                <th class="px-4 py-2 font-semibold text-gray-600">Unidad de Medida</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ingrediente in ingredientes %}
+                            <tr class="border-b">
+                                <td class="px-4 py-2 text-gray-700">{{ ingrediente.insumo }}</td>
+                                <td class="px-4 py-2 text-gray-700">{{ ingrediente.cantidad }}</td>
+                                <td class="px-4 py-2 text-gray-700">{{ ingrediente.unidad }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Botón para volver -->
+            <div class="text-center mt-8">
+                <a href="{{ url_for('receta.buscar_receta') }}" class="bg-primary text-black px-6 py-2 rounded-lg hover:bg-blue-700 transition duration-200">
+                    Volver a la búsqueda de recetas
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+{% endblock %}

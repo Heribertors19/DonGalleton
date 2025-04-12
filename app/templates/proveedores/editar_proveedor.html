@@ -1,0 +1,191 @@
+{% extends "base.html" %} {% block title %}Proveedores{% endblock %} {% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-30 shadow-md">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Contenedor principal con posición relativa -->
+        <div class="relative">
+            <!-- Botón del menú de hamburguesa -->
+            <button id="menu-toggle" class="flex items-center justify-center text-4xl rounded-2xl z-30 relative">
+              <svg xmlns="http://www.w3.org/2000/svg" class="size-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+
+            <!-- Menú lateral (inicia oculto con -translate-x-full) -->
+            <div id="sidebar" class=" w-2/6  hidden fixed top-0 left-0 w-64 h-full bg-tertiary shadow-lg transform -translate-x-full transition-transform duration-300 z-40 border-2 rounded-lg">
+                <div class="relative p-10">
+                    <!-- Botón de cerrar -->
+                    <button id="close-sidebar" class="absolute top-2 right-2 bg-red rounded-full border-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" style="width: 40px; height: 40px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                    <h2 class="py-4 text-center text-3xl font-bold">Menú</h2>
+                    <ul class="space-y-2">
+                        <li><a href="/inicio" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Dashboard</a></li>
+                        <li><a href="/produccion/ordenes" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Producción</a></li>
+                        <li><a href="/stock/galletas#" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Inventario de galletas</a></li>
+                        <li><a href="/Insumos" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Inventario de Insumos</a></li>
+                        <li><a href="/punto_venta" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Punto de venta</a></li>
+                        <li><a href="/mermas" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">Mermas</a></li>
+                        <li><a href="/proveedores" class="block bg-primary text-dark-gray p-4 rounded-lg border-2 hover:bg-dark-gray font-bold">proveedores</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Capa oscura (overlay), inicia oculta -->
+            <div id="overlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30"></div>
+
+            <!-- Estilos -->
+            <style>
+                #sidebar {
+                    transition: transform 0.3s ease-in-out;
+                }
+                
+                #overlay.show {
+                    backdrop-filter: blur(4px);
+                }
+                
+                body.menu-open {
+                    overflow: hidden;
+                }
+            </style>
+
+            <!-- Script al final para asegurar funcionamiento -->
+            <script>
+                const toggleButton = document.getElementById('menu-toggle');
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('overlay');
+                const closeSidebarButton = document.getElementById('close-sidebar');
+
+                function openMenu() {
+                    sidebar.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        sidebar.classList.remove('-translate-x-full');
+                    });
+                    overlay.classList.remove('hidden');
+                    overlay.classList.add('show');
+                    document.body.classList.add('menu-open');
+                }
+
+                function closeMenu() {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('show');
+                    document.body.classList.remove('menu-open');
+
+                    // Después de la animación, ocultamos completamente
+                    setTimeout(() => {
+                        sidebar.classList.add('hidden');
+                    }, 300);
+                }
+
+                toggleButton.addEventListener('click', () => {
+                    if (sidebar.classList.contains('hidden') || sidebar.classList.contains('-translate-x-full')) {
+                        openMenu();
+                    } else {
+                        closeMenu();
+                    }
+                });
+                overlay.addEventListener('click', closeMenu);
+                closeSidebarButton.addEventListener('click', closeMenu); // <- Esto hace que funcione tu botón de cerrar
+            </script>
+        </div>
+        <!-- Título centrado -->
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+    </div>
+</header>
+<!--Contenedor primcipal-->
+<!-- registro_proveedor.html -->
+<div class="min-h-screen flex flex-col lg:flex-row items-center justify-center p-mermas gap-10">
+    <!-- Formulario -->
+    <!-- Formulario -->
+    <div class="w-full lg:w-1/2 flex flex-col items-center">
+        <h1 class="text-3xl mb-6 font-bold text-dark-gray text-center p-mermas">Editar Proveedor</h1>
+        <div class="rounded-lg border-2 bg-tertiary w-full max-w-md">
+            <form method="POST" id="form-proveedor" class="w-full bg-tertiary p-6 rounded-lg shadow-md space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Nombre -->
+                <div class="flex flex-col">
+                    <label for="nombre" class="mb-1 text-center font-bold">Nombre</label>
+                    <input id="nombre" type="text" name="nombre" value="{{ proveedor.nombre }}" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-nombre">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Teléfono -->
+                <div class="flex flex-col">
+                    <label for="telefono" class="mb-1 text-center font-bold">Teléfono</label>
+                    <input type="tel" id="telefono" name="telefono" value="{{ proveedor.telefono }}" class="w-full border px-4 py-2 rounded-lg border-2" pattern="(\(\d{3}\)\s?)?\d{3}[-]?\d{4}" maxlength="14" required placeholder="(123) 456-7890">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-telefono">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Dirección -->
+                <div class="flex flex-col">
+                    <label for="direccion" class="mb-1 text-center font-bold">Dirección</label>
+                    <input id="direccion" type="text" name="direccion" value="{{ proveedor.direccion }}" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-direccion">Este campo es obligatorio</span>
+                </div>
+
+                <!-- Email -->
+                <div class="flex flex-col">
+                    <label for="email" class="mb-1 text-center font-bold">Email</label>
+                    <input id="email" type="email" name="email" value="{{ proveedor.email }}" required class="w-full border px-4 py-2 rounded-lg border-2">
+                    <span class="text-red-600 text-sm mt-1 hidden" id="error-email">Este campo es obligatorio</span>
+                </div>
+                <input type="hidden" name="estatus" value="{{ proveedor.estatus }}">
+                <!-- Botón -->
+                <div class="flex justify-center p-4">
+                    <button type="submit" class="bg-primary text-dark-gray p-2 rounded-lg font-bold border-2 hover:bg-dark-gray">
+                        Actualizar proveedor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Consejo motivacional -->
+<div class="w-full lg:w-1/2 flex justify-center items-center">
+    <div class="bg-white border-l-4 border-primary p-6 rounded-lg shadow-xl max-w-md text-center">
+        <h2 class="text-2xl font-bold mb-4 text-dark-gray">💡 Consejo</h2>
+        <p class="text-lg text-gray-700 italic">
+            “Un buen proveedor no solo entrega productos, también construye confianza y fortalece el crecimiento de tu negocio.”
+        </p>
+    </div>
+</div>
+</div>
+
+<script>
+    document.getElementById('form-proveedor').addEventListener('submit', function(e) {
+        let isValid = true;
+
+        // Validación de campos requeridos
+        ['nombre', 'telefono', 'direccion', 'email'].forEach(function(campo) {
+            const input = document.getElementById(campo);
+            const error = document.getElementById('error-' + campo);
+
+            if (!input.value.trim()) {
+                error.classList.remove('hidden');
+                isValid = false;
+            } else {
+                error.classList.add('hidden');
+            }
+        });
+
+        // Prevenir envío si hay errores
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<div class="bg-primary min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white p-6 rounded-xl shadow-lg">
+    <h2 class="text-3xl font-semibold text-center text-zinc-950 mb-6 mt-16">
+      Registro de Usuario
+    </h2>
+    
+    <form action="{{ url_for('auth.registro') }}" method="POST" class="space-y-3 w-full">
+      {{ form.hidden_tag() }}
+
+      <label for="nombre" class="block text-sm font-medium text-zinc-950">Nombre</label>
+      {{ form.nombre(class="w-full p-2 border rounded-lg") }}
+
+      <label for="apellidoPaterno" class="block text-sm font-medium text-zinc-950">Apellido Paterno</label>
+      {{ form.apellidoPaterno(class="w-full p-2 border rounded-lg") }}
+
+      <label for="apellidoMaterno" class="block text-sm font-medium text-zinc-950">Apellido Materno</label>
+      {{ form.apellidoMaterno(class="w-full p-2 border rounded-lg") }}
+
+      <label for="email" class="block text-sm font-medium text-zinc-950">Email</label>
+      {{ form.email(class="w-full p-2 border rounded-lg") }}
+
+      <label for="idRol" class="block text-sm font-medium text-zinc-950">Rol</label>
+      {{ form.idRol(class="w-full p-2 border rounded-lg") }}
+
+      <label for="usuario" class="block text-sm font-medium text-zinc-950">Usuario</label>
+      {{ form.usuario(class="w-full p-2 border rounded-lg") }}
+
+      <label for="contrasenia" class="block text-sm font-medium text-zinc-950">Contraseña</label>
+      {{ form.contrasenia(class="w-full p-2 border rounded-lg") }}
+
+      <label for="confirm_contrasenia" class="block text-sm font-medium text-zinc-950">Confirmar Contraseña</label>
+      {{ form.confirm_contrasenia(class="w-full p-2 border rounded-lg") }}
+      
+      <button
+        type="submit"
+        class="w-full bg-black text-white py-2 mt-3 rounded-lg hover:bg-pink-700 transition duration-300"
+      >
+        Registrar
+      </button>
+
+      <p class="text-zinc-950 text-center mt-4">
+        ¿Ya tienes cuenta?
+        <a href="{{ url_for('auth.login') }}" class="underline">Inicia sesión</a>
+      </p>
+    </form>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mt-4">
+          {% for category, message in messages %}
+            <div class="bg-pink-100 text-pink-600 border border-pink-300 p-4 rounded-lg mb-2">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if form.errors %}
+      <div class="mt-4 text-sm text-red-600">
+        {% for field, errors in form.errors.items() %}
+          {% for error in errors %}
+            <p>{{ form[field].label.text }}: {{ error }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

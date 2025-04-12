@@ -1,0 +1,167 @@
+{% extends "base.html" %} {% block title %}Mermas de Insumos - Don Galletto{% endblock %} {% block content %}
+{% include "header2.html" %}
+
+<div class="bg-secondary min-h-screen flex flex-col items-center justify-center p-content">
+    <h1 class="text-center text-3xl p-mermas-title font-bold">Mermas de Insumos</h1>
+    <!-- Debug (temporal) -->
+    <div class="hidden">
+        Debug Info:<br> show_modal: {{ show_modal }}<br> insumos_agregados: {{ insumos_agregados }}<br> form_data: {{ session.get('form_data', {}) }}
+    </div>
+    <!-- Contenedor principal -->
+    <div class="flex w-full max-w-6xl gap-8 w-1/3">
+        <!-- Columna izquierda: Insumos disponibles -->
+        <ul class="grid grid-cols-2 gap-4 ">
+            {% for insumo in insumos_disponibles %}
+            <li>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="agregar_insumo" value="{{ insumo.idInsumo }} ">
+                    <button type="submit" name="action" value="add" class="w-full h-full bg-primary p-4 rounded-lg text-dark-gray font-bold rounded-lg border-2 border-dark-gray flex flex-col items-center justify-center hover:bg-dark-gray">
+                        {% set img_file = get_insumo_image(insumo.nombre) %}
+                        {% if img_file %}
+                        <img src="{{ url_for('static', filename='img/' + img_file) }}" 
+                             alt="{{ insumo.nombre }}" 
+                             class="w-16 h-16 mb-2 object-contain">
+                        {% else %}
+                        <div class="w-16 h-16 mb-2 flex items-center justify-center bg-gray-200 rounded-lg">
+                            <span class="text-gray-500">No image</span>
+                        </div>
+                        {% endif %}
+                        <span class="font-bold text-center text-sm">{{ insumo.nombre|formatear_nombre }}</span>
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="w-2/3"></div>
+        <!-- Columna derecha -->
+        <div class="w-3/3 bg-tertiary overflow-x-auto rounded-lg border-2  shadow-lg">
+            <!-- Sección superior: Formulario de mermas -->
+            <h2 class="py-4 bg-primary text-center text-xl font-bold mb-4 rounded-lg border-1 shadow-lg">Registrar Nueva Merma</h2>
+            <div class=" form-section">
+                <form method="POST" class="bg-tertiary" id="form-merma">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> {% if insumos_agregados %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-tertiary rounded-lg">
+                            <thead class="bg-gray-200">
+                                <tr>
+                                    <th class="wt-1/6 p-2 text-left">Eliminar</th>
+                                    <th class="wt-2/6 p-2 text-left">Nombre</th>
+                                    <th class="wt-3/6 p-2 text-left">Presentación</th>
+                                    <th class="wt-4/6 p-2 text-left">Tipo Merma</th>
+                                    <th class="wt-5/6 p-3 text-left">Cantidad</th>
+                                    <th class="wt-6/6 p-2 text-left">Unidad</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-tertiary">
+                                {% for insumo in insumos_agregados %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="wt-1/6 p-2 text-center">
+                                        <form method="POST" action="{{ url_for('mermas.registrar_merma_insumos') }}" class=" form-eliminar">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <input type="hidden" name="insumo_id" value="{{ insumo.idInsumo }}">
+                                            <button type="submit" name="action" value="eliminar" class="w-button">
+                                            <img src="{{ url_for('static', filename='img/trash.png') }}" alt="Eliminar">
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td class="wt-2/6 py-2 font-medium break-words whitespace-normal">
+                                        {{ insumo.nombre|formatear_nombre }}
+                                    </td>
+                                    <td class="wt-3/6 py-2">{{ insumo.presentacion }}</td>
+                                    <td class="wt-4/6 py-2">
+                                        <select name="tipo_merma_{{ insumo.idInsumo }}" class="w-full p-2 border rounded-md" required>
+                                            <option value="vencimiento">Vencimiento</option>
+                                            <option value="deterioro">Deterioro</option>
+                                            <option value="error_produccion">Error producción</option>
+                                            <option value="manejo">Manejo inadecuado</option>
+                                            <option value="otro">Otro</option>
+                                        </select>
+                                    </td>
+                                    <td class="wt-5/6 py-2">
+                                        <input type="number" name="cantidad_{{ insumo.idInsumo }}" id="cantidad_{{ insumo.idInsumo }}" class="w-full p-2 border rounded-md" min="0.001" step="0.001" value="1" required> </td>
+                                    <td class="wt-6/6 p-2">
+                                        <select name="unidad_{{ insumo.idInsumo }}" id="unidad_{{ insumo.idInsumo }}" class="w-full p-2 border rounded-md unidad-selector" data-id="{{ insumo.idInsumo }}" required>
+                                            {% set tipo_insumo = determinar_tipo_por_presentacion(insumo.presentacion) %}
+                                            
+                                            {% if tipo_insumo == 'solido' %}
+                                                <option value="gramo">Gramos (g)</option>
+                                                <option value="kilogramo">Kilogramos (kg)</option>
+                                                <option value="costal">Costales</option>
+                                                <option value="taza">Tazas</option>
+                                                <option value="cucharada">Cucharadas</option>
+                                            
+                                            {% elif tipo_insumo == 'liquido' %}
+                                                <option value="mililitro">Mililitros (ml)</option>
+                                                <option value="litro">Litros (l)</option>
+                                                <option value="galon">Galones</option>
+                                                <option value="taza">Tazas</option>
+                                                <option value="cucharada">Cucharadas</option>
+                                            
+                                            {% else %}
+                                                <option value="unidad">Unidades</option>
+                                            {% endif %}
+                                        </select>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-center p-6">
+                        <form method="POST" action="{{ url_for('mermas.registrar_merma_insumos') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        </form>
+                        <button type="submit" name="action" value="registrar" class="px-5 py-3 bg-primary text-dark-gray font-bold rounded-lg border-2 border-dark-gray hover:bg-dark-gray">
+                            Registrar Merma
+                        </button>
+                </form>
+                </div>
+                {% else %}
+                <div class="text-center p-8">
+                    <h3 class="text-lg font-medium mt-4">No hay insumos agregados</h3>
+                    <p class="text-gray-600 mt-1">Selecciona insumos de la columna izquierda</p>
+                </div>
+                {% endif %}
+                </form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Formulario oculto para eliminar insumos -->
+                <form method="POST" action="{{ url_for('mermas.registrar_merma_insumos') }}" id="form-eliminar" style="display: none;">
+                    <input type="hidden" name="insumo_id" id="insumo-a-eliminar">
+                    <input type="hidden" name="action" value="eliminar">
+                </form>
+
+            </div>
+
+            <!-- Sección inferior: Historial de mermas -->
+            <div class="form-section historial-container mt-6">
+                <h2 class=" py-4 font-bold mb-4 text-center bg-primary rounded-lg border-1 shadow-lg">Historial de Mermas (este mes)</h2>
+                <div class="overflow-x-auto bg-tertiary rounded-lg shadow">
+                    <table class="w-full">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left w-1/5">Insumo</th>
+                                <th class="px-4 py-3 text-left w-1/5">Presentación</th>
+                                <th class="px-4 py-4 text-left w-1/5">Tipo Merma</th>
+                                <th class="px-4 py-2 text-left w-1/6">Cantidad</th>
+                                <th class="px-4 py-3 text-left w-1/4">Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% for merma in historial_mermas %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3">{{ merma.nombre_insumo|formatear_nombre }}</td>
+                                <td class="px-4 py-3">{{ merma.presentacion }}</td>
+                                <td class="px-4 py-4">{{ merma.tipoMerma|formatear_nombre }}</td>
+                                <td class="px-4 py-2">{{ merma.cantidad }}</td>
+                                <td class="px-4 py-3">{{ merma.fecha.strftime('%Y-%m-%d') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

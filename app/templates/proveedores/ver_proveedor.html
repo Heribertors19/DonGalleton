@@ -1,0 +1,57 @@
+{% extends "base.html" %} {% block title %}Proveedores{% endblock %} {% block content %}
+{% include "header.html" %}
+<div class="bg-secondary min-h-screen flex flex-col items-center justify-center p-mermas">
+    <h1 class="text-center justify-center text-3xl font-bold text-dark-gray p-mermas-title">Información del Proveedor</h1>
+    <ul class="bg-tertiary p-6 rounded-lg shadow-md space-y-4 border-2">
+        <li><strong>Nombre:</strong> {{ proveedor.nombre }}</li>
+        <li><strong>Teléfono:</strong> {{ proveedor.telefono }}</li>
+        <li><strong>Email:</strong> {{ proveedor.email }}</li>
+        <li><strong>Dirección:</strong> {{ proveedor.direccion }}</li>
+    </ul>
+
+    <hr>
+
+    <h1 class="text-center justify-center text-3xl p-mermas-title font-bold text-dark-gray">Compras realizadas</h1>
+
+    {% if compras %} {% for compra in compras %}
+    <div style="padding:10px; margin-bottom:15px;" class="bg-tertiary p-6 rounded-lg shadow-md space-y-4 border-2">
+        <h3 class="text-center justify-center text-2xl font-bold text-dark-gray">Compra #{{ compra.idCompra }}</h3>
+        <h3 class="text-center justify-center text-2xl font-bold text-dark-gray">Fecha: {{ compra.fechaCompra }} </h3>
+
+        {% if compra.detalles %}
+        <table border="1" cellpadding="5" cellspacing="0">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2">ID Insumo</th>
+                    <th class="px-4 py-2">Cantidad</th>
+                    <th class="px-4 py-2">Precio Actual</th>
+                    <th class="px-4 py-2">Sutotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detalle in compra.detalles %}
+                <tr>
+                    <td class="px-4 py-2">{{ detalle.idInsumo }}</td>
+                    <td class="px-4 py-2">{{ detalle.cantidad }}</td>
+                    <td class="px-4 py-2">
+                        {% if detalle.precioUnitario is not none %}
+                          ${{ '%.2f'|format(detalle.precioUnitario) }}
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </td>
+                    <td class="px-4 py-2">${{ '%.2f'|format(detalle.precioUnitario * detalle.cantidad) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h3 class="text-center justify-center text-2xl font-bold text-dark-gray">Total: ${{ '%.2f'|format(compra.costoTotal) }}</h3>
+        {% else %}
+        <p>No hay detalles para esta compra.</p>
+        {% endif %}
+    </div>
+    {% endfor %} {% else %}
+    <p>No hay compras registradas para este proveedor.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos - Online store{% endblock %}
+
+{% block content %}
+{% include "header.html" %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+<!-- Main container -->
+<div class="container mx-auto px-4 py-15 flex flex-col items-center p-8 mt-10">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Listado de Pedidos</h1>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <!-- Search and filter bar -->
+        <div class="flex flex-col md:flex-row justify-between items-center p-4 bg-gray-50 border-b gap-4">
+            <div class="w-full md:w-1/2 relative">
+                <input type="text" id="searchInput" placeholder="Buscar pedido..."
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all">
+                <svg class="absolute right-3 top-3 h-5 w-5 text-gray-400" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            </div>
+            <div class="w-full md:w-auto flex items-center gap-2">
+                <label for="statusFilter" class="text-sm font-medium text-gray-700 whitespace-nowrap">Filtrar
+                    por:</label>
+                <select id="statusFilter"
+                    class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black-500 focus:border-black-300 transition-all">
+                    <option value="all">Todos los estados</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En proceso">En proceso</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Atrasado">Atrasado</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Orders table -->
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            N° Pedido
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Cliente
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fecha Creación
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Fecha Entrega
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Estado
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% if pedidos %}
+                    {% for pedido in pedidos %}
+                    <tr class="hover:bg-gray-50" data-id="{{ pedido.id }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <a href="#" onclick="mostrarDetallePedido('{{ pedido.id }}'); return false;"
+                                class="text-amber-600 hover:text-amber-800 hover:underline">
+                                {{ pedido.numero_pedido }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ pedido.cliente }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ pedido.fecha_creacion }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ pedido.fecha_entrega }}
+                            {% if pedido.dias_para_entrega < 0 %} <span class="ml-2 text-xs text-red-500">(Atrasado {{
+                                -pedido.dias_para_entrega }} días)</span>
+                                {% elif pedido.dias_para_entrega == 0 %}
+                                <span class="ml-2 text-xs text-yellow-500">(Hoy)</span>
+                                {% elif pedido.dias_para_entrega < 3 %} <span class="ml-2 text-xs text-yellow-500">(En
+                                    {{ pedido.dias_para_entrega }} días)</span>
+                                    {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ pedido.total }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span id="estado-{{ pedido.id }}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if pedido.estado == 'Entregado' %}bg-green-100 text-green-800
+                                    {% elif pedido.estado == 'Pendiente' %}bg-blue-100 text-blue-800
+                                    {% elif pedido.estado == 'Atrasado' %}bg-red-100 text-red-800
+                                    {% elif pedido.estado == 'Cancelado' %}bg-gray-100 text-gray-800
+                                    {% elif pedido.estado == 'En proceso' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ pedido.estado }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                {% if pedido.estado != 'Entregado' %}
+                                <button onclick="actualizarEstado('{{ pedido.id }}', 'Entregado')"
+                                    class="text-green-600 hover:text-green-900 px-2 py-1 border border-green-200 rounded hover:bg-green-50">
+                                    Entregado
+                                </button>
+                                {% endif %}
+
+                                {% if pedido.estado != 'Cancelado' %}
+                                <button onclick="actualizarEstado('{{ pedido.id }}', 'Cancelado')"
+                                    class="text-red-600 hover:text-red-900 px-2 py-1 border border-red-200 rounded hover:bg-red-50">
+                                    Cancelar
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                            No hay pedidos registrados
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Mostrando <span class="font-medium">1</span> a <span class="font-medium">{{ pedidos|length if
+                            pedidos else 0 }}</span> de <span class="font-medium">{{ pedidos|length if pedidos else 0
+                            }}</span> resultados
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <a href="#"
+                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Anterior</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        <a href="#" aria-current="page"
+                            class="z-10 bg-amber-50 border-amber-500 text-amber-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                            1
+                        </a>
+                        <a href="#"
+                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Siguiente</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Pedido -->
+<div id="pedidoModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center border-b pb-3">
+            <h3 class="text-xl font-semibold text-gray-800">Detalle del Pedido #<span id="modalNumeroPedido"></span>
+            </h3>
+            <button onclick="cerrarModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="py-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <h4 class="font-medium text-gray-700">Información del Cliente</h4>
+                    <p id="modalCliente" class="text-gray-600"></p>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-700">Fechas</h4>
+                    <p><span class="font-medium">Creación:</span> <span id="modalFechaCreacion"
+                            class="text-gray-600"></span></p>
+                    <p><span class="font-medium">Entrega:</span> <span id="modalFechaEntrega"
+                            class="text-gray-600"></span></p>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h4 class="font-medium text-gray-700">Estado</h4>
+                <span id="modalEstado" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"></span>
+            </div>
+
+            <div class="mb-4">
+                <h4 class="font-medium text-gray-700">Productos</h4>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 mt-2">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Producto</th>
+                                <th
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Cantidad</th>
+                                <th
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Precio Unitario</th>
+                                <th
+                                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalProductos" class="bg-white divide-y divide-gray-200">
+                            <!-- Los productos se llenarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex justify-end border-t pt-4">
+                <div class="text-right">
+                    <p class="text-lg font-bold text-gray-800"><span class="font-medium">Total:</span> <span
+                            id="modalTotal"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end pt-2 border-t">
+            <button onclick="cerrarModal()"
+                class="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div id="confirmModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col items-center">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">¡Atención!</h3>
+            <p class="text-gray-600 mb-6 text-center" id="confirmMessage"></p>
+            
+            <div class="flex space-x-4">
+                <button id="confirmCancel" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Cancelar
+                </button>
+                <button id="confirmAccept" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-hover transition-colors">
+                    Continuar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Éxito -->
+<div id="successModal" class="fixed inset-0 bg-black/50 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="flex flex-col items-center">
+            <svg class="h-12 w-12 text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">¡Éxito!</h3>
+            <p class="text-gray-600 mb-6 text-center" id="successMessage"></p>
+            
+            <div class="flex justify-center">
+                <button onclick="document.getElementById('successModal').classList.add('hidden')" 
+                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary transition-colors">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Search and filter functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const tableRows = document.querySelectorAll('tbody tr');
+
+        function filterOrders() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+
+            tableRows.forEach(row => {
+                if (row.querySelector('td')) { // Skip the "no orders" row
+                    const orderNumber = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const customer = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const status = row.querySelector('td:nth-child(6) span').textContent;
+
+                    const matchesSearch = orderNumber.includes(searchTerm) || customer.includes(searchTerm);
+                    const matchesStatus = statusValue === 'all' || status === statusValue;
+
+                    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', filterOrders);
+        statusFilter.addEventListener('change', filterOrders);
+    });
+
+    // Función para mostrar el modal de confirmación
+    function showConfirmationModal(message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const messageElement = document.getElementById('confirmMessage');
+            
+            messageElement.textContent = message;
+            modal.classList.remove('hidden');
+            
+            // Limpiar eventos anteriores
+            const confirmBtn = document.getElementById('confirmAccept');
+            const cancelBtn = document.getElementById('confirmCancel');
+            
+            confirmBtn.onclick = function() {
+                modal.classList.add('hidden');
+                resolve(true);
+            };
+            
+            cancelBtn.onclick = function() {
+                modal.classList.add('hidden');
+                resolve(false);
+            };
+        });
+    }
+
+    // Función para mostrar el modal de éxito
+    function showSuccessModal(message) {
+        const modal = document.getElementById('successModal');
+        const messageElement = document.getElementById('successMessage');
+        
+        messageElement.textContent = message;
+        modal.classList.remove('hidden');
+    }
+
+    async function actualizarEstado(pedidoId, nuevoEstado) {
+        const confirmed = await showConfirmationModal(`¿Estás seguro de cambiar el estado del pedido a "${nuevoEstado}"?`);
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/pedidos/${pedidoId}/estado`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    estado: nuevoEstado
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Actualizar visualmente el estado
+                const estadoElement = document.getElementById(`estado-${pedidoId}`);
+                estadoElement.textContent = nuevoEstado;
+                
+                // Limpiar clases y agregar las nuevas según el estado
+                estadoElement.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ';
+                
+                // Aplicar clases según el estado usando el método del servicio
+                estadoElement.className += data.estado_clase;
+
+                // Mostrar notificación de éxito
+                showSuccessModal(`Estado actualizado a "${nuevoEstado}"`);
+                
+                // Recargar la página después de 2 segundos
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                throw new Error(data.error || 'Error al actualizar el estado');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showSuccessModal(`Error: ${error.message}`);
+        }
+    }
+
+    // Función para mostrar detalles del pedido
+    async function mostrarDetallePedido(pedidoId) {
+        try {
+            const modal = document.getElementById('pedidoModal');
+            modal.classList.remove('hidden');
+
+            // Mostrar loader
+            document.getElementById('modalProductos').innerHTML = `
+            <tr>
+                <td colspan="4" class="px-4 py-2 text-sm text-gray-600 text-center">
+                    <div class="flex justify-center items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-amber-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Cargando detalles del pedido...
+                    </div>
+                </td>
+            </tr>
+        `;
+
+            const response = await fetch(`/pedidos/${pedidoId}`);
+            if (!response.ok) throw new Error('Error al obtener los datos');
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            const pedido = data.pedido;
+
+            // Llenar datos básicos
+            document.getElementById('modalNumeroPedido').textContent = pedido.numero_pedido || 'N/A';
+            document.getElementById('modalCliente').textContent = pedido.cliente || 'N/A';
+            document.getElementById('modalFechaCreacion').textContent = formatDate(pedido.fecha_creacion) || 'No especificada';
+            document.getElementById('modalFechaEntrega').textContent = formatDate(pedido.fecha_entrega) || 'No especificada';
+            document.getElementById('modalTotal').textContent = `$${pedido.total?.toFixed(2) || '0.00'}`;
+
+            // Estado con colores
+            const estadoElement = document.getElementById('modalEstado');
+            estadoElement.textContent = pedido.estado || 'N/A';
+            estadoElement.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full';
+
+            const estadoClasses = {
+                'Pendiente': ['bg-blue-100', 'text-blue-800'],
+                'En proceso': ['bg-yellow-100', 'text-yellow-800'],
+                'Entregado': ['bg-green-100', 'text-green-800'],
+                'Cancelado': ['bg-gray-100', 'text-gray-800'],
+                'Atrasado': ['bg-red-100', 'text-red-800']
+            };
+
+            const clases = estadoClasses[pedido.estado] || ['bg-gray-100', 'text-gray-800'];
+            clases.forEach(clase => estadoElement.classList.add(clase));
+
+            // Productos
+            const productosContainer = document.getElementById('modalProductos');
+            productosContainer.innerHTML = '';
+
+            if (pedido.productos && pedido.productos.length > 0) {
+                pedido.productos.forEach(producto => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                    <td class="px-4 py-2 text-sm text-gray-600">${producto.nombre || 'N/A'}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">${producto.cantidad || '0'}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">$${(producto.precio_unitario || 0).toFixed(2)}</td>
+                    <td class="px-4 py-2 text-sm text-gray-600">$${(producto.subtotal || 0).toFixed(2)}</td>
+                `;
+                    productosContainer.appendChild(row);
+                });
+            } else {
+                productosContainer.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-4 py-2 text-sm text-gray-600 text-center">
+                        No se encontraron productos en este pedido
+                    </td>
+                </tr>
+            `;
+            }
+
+        } catch (error) {
+            console.error('Error al cargar detalles del pedido:', error);
+            document.getElementById('modalProductos').innerHTML = `
+            <tr>
+                <td colspan="4" class="px-4 py-2 text-sm text-red-600 text-center">
+                    Error al cargar el pedido: ${error.message}
+                    <br><br>
+                    <button onclick="location.reload()" class="px-3 py-1 bg-gray-200 rounded text-sm">
+                        Recargar página
+                    </button>
+                </td>
+            </tr>
+        `;
+        }
+    }
+
+    // Función para formatear fechas
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch {
+            return dateString;
+        }
+    }
+
+    function cerrarModal() {
+        const modal = document.getElementById('pedidoModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    // Cerrar el modal al hacer clic fuera del contenido
+    window.onclick = function (event) {
+        const modal = document.getElementById('pedidoModal');
+        const confirmModal = document.getElementById('confirmModal');
+        const successModal = document.getElementById('successModal');
+        
+        if (event.target === modal) {
+            cerrarModal();
+        }
+        if (event.target === confirmModal) {
+            confirmModal.classList.add('hidden');
+        }
+        if (event.target === successModal) {
+            successModal.classList.add('hidden');
+        }
+    }
+</script>
+
+{% endblock %}

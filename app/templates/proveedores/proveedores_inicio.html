@@ -1,0 +1,80 @@
+{% extends "base.html" %} {% block title %}Proveedores{% endblock %} {% block content %}
+
+{% include "header.html" %}
+<!--Contenedor Principal -->
+<div class="bg-secondary min-h-screen flex flex-col items-center justify-center p-mermas">
+    <h1 class="text-center justify-center text-3xl p-mermas-title font-bold text-dark-gray">Proveedores</h1>
+    <div class="w-full flex justify-between items-center mb-4">
+        <!-- Input de búsqueda -->
+        <div class="w-3/4">
+            <input type="text" id="busquedaProveedores" placeholder="Buscar proveedor..." class="border-2 rounded-lg border px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Botón para agregar nuevo proveedor -->
+        <a href="/ruta/nuevo-proveedor" class="bg-primary text-dark-gray px-4 py-2 rounded-lg border-2 hover:bg-dark-gray font-bold whitespace-nowrap ml-4">
+            <i class="fas fa-plus"></i>Nuevo proveedor
+        </a>
+    </div>
+
+    <table class="table-auto w-full  border-2 rounded-lg">
+        <thead>
+            <tr class="bg-primary border-2 rounded-lg justify-center">
+                <th class="border-2 px-4 py-2 ">Nombre</th>
+                <th class="border-2 px-4 py-2">Teléfono</th>
+                <th class="border-2 px-4 py-2">Dirección</th>
+                <th class="border-2 px-4 py-2">Email</th>
+                <th class="border-2 px-4 py-2">Insumos que provee</th>
+                <th class="border-2 px-4 py-2">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in proveedores %}
+            <tr class="justify-center bg-tertiary">
+                <td class="px-4 py-2 text-center">{{ p.nombre }}</td>
+                <td class="px-4 py-2 text-center">{{ p.telefono }}</td>
+                <td class="px-4 py-2 text-center">{{ p.direccion }}</td>
+                <td class="px-4 py-2 text-center">{{ p.email }}</td>
+                <td class="px-4 py-2 text-center">
+                    {% if p.insumos %}
+                    <ul class="list-disc list-inside">
+                        {% for insumo in p.insumos %}
+                        <li>{{ insumo }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <em>Sin insumos asignados</em> {% endif %}
+                </td>
+                <td class="w-full flex justify-center mb-4">
+                    <div class="flex items-center gap-2 ">
+                        <a href="{{ url_for('proveedores.editar_proveedor', id=p.id) }}" class="text-blue-600 hover:text-blue-800 flex items-center gap-1 p-5">
+                            <i class="fas fa-edit  p-4 border-2 rounded-lg text-dark-gray bg-blue hover:bg-dark-gray"></i>
+                        </a>
+                        <a href="{{ url_for('proveedores.ver_proveedor', id=p.id) }}" class="text-green-600 hover:text-green-800 flex items-center gap-1 p-5">
+                            <i class="fas fa-eye   p-4 border-2 rounded-lg text-dark-gray bg-yellow hover:bg-dark-gray"></i>
+                        </a>
+                        <form action="{{ url_for('proveedores.eliminar_proveedor', id=p.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este proveedor?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="flex items-center gap-1 p-5">
+                                <i class="fas fa-trash-alt p-4 border-2 rounded-lg text-dark-gray bg-red hover:bg-dark-gray"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    document.getElementById('busquedaProveedores').addEventListener('input', function() {
+        const filtro = this.value.toLowerCase();
+        const filas = document.querySelectorAll('tbody tr');
+
+        filas.forEach(fila => {
+            const textoFila = fila.innerText.toLowerCase();
+            fila.style.display = textoFila.includes(filtro) ? '' : 'none';
+        });
+    });
+</script>
+
+{% endblock %}

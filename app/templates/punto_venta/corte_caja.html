@@ -1,0 +1,215 @@
+{% extends "base.html" %} {% block title %}Punto de venta{% endblock %} {% block content %}
+<header class="bg-primary fixed top-0 left-0 right-0 z-50 shadow-md">
+    <div class="flex justify-between items-center h-full px-4">
+        <!-- Botón del menú de hamburguesa -->
+        <button class="flex items-center justify-center h-full text-4xl rounded-2xl">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-10">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+
+        <!-- Título centrado -->
+        <img src="{{ url_for('static', filename='img/logo2.png') }}" alt="Confirmación" class="text-center w-16 h-16  p-3">
+        <!-- Contenido alineado a la derecha -->
+        <div class="flex items-center">
+            <img src="{{ url_for('static', filename='img/profile-user.png') }}" alt="User" style="height: 40px;">
+            <p class="p-2">{{ current_user.nombre }}</p>
+        </div>
+    </div>
+</header>
+<main class="mt-20 p-4 p-mermas-content" style="padding-top: 120px;">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Columna izquierda: Formulario de corte de caja -->
+        <div class="bg-tertiary rounded-lg border-2 p-8">
+            <a href="{{ url_for('punto_venta.interfaz_venta') }}" class=" top-4 left-4 font-bold text-dark-gray bg-primary border-2  border-dark-gray px-3 py-1 rounded-lg hover:bg-dark-gray hover:text-white transition-all">
+                Regresar
+            </a>
+            <h1 class="text-center text-3xl font-bold mb-4">Corte de caja</h1>
+            <form method="POST" action="{{ url_for('punto_venta.corte_caja') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label for="efectivo_recibido" class="block text-left mb-2 font-bold text-dark-gray">Efectivo recibido:</label>
+                <input type="number" name="efectivo_recibido" step="0.01" required class="w-full p-2 border rounded-lg mb-4 border-2">
+                <button type="submit" class="w-full bg-primary font-bold text-dark-gray py-2 rounded-lg border-2 hover:bg-dark-gray">Realizar corte de caja</button>
+            </form>
+
+            {% if ventas_totales is not none %}
+            <div class="mt-6 text-center">
+                <h2 class="text-xl font-semibold">Resumen</h2>
+                <p class="mt-2">Ventas Totales: ${{ "%.2f"|format(ventas_totales) }}</p>
+                {% if efectivo_recibido is not none %}
+                <p>Efectivo Recibido: ${{ efectivo_recibido }}</p>
+                <p class="font-bold">Diferencia: ${{ diferencia}}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        <div class="p-8">
+            <!-- Botón de impresión -->
+            <div class="flex justify-center mb-4">
+                <button onclick="imprimirTicket()" class="bg-primary hover:bg-dark-gray text-dark-gray font-bold py-2 px-4 border-2 rounded-lg flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    Imprimir Ticket
+                </button>
+            </div>
+            <!-- Contenido del ticket (oculto para impresión) -->
+            <div class="flex justify-end mb-4">
+                <button onclick="imprimirTicket()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                    </svg>
+                    Imprimir Ticket
+                </button>
+            </div>
+
+            <!-- Contenido del ticket (oculto para impresión) -->
+            <div id="ticket-content" class="hidden">
+                <div class="text-center mb-4">
+                    <h1>
+                        <img src="/static/img/logo2.png" style="height: 30px; width: 40px;" alt="Logo MR. COOKIES"> MR. COOKIES
+                    </h1>
+                    <p class="text-sm">Corte de Caja</p>
+                    <p class="text-xs">{{ fecha_actual }}</p>
+                </div>
+
+                <!-- Detalle de cada venta -->
+                <div class="border-t border-b py-2 my-2">
+                    {% for venta in ventas_hoy %}
+                    <div class="mb-2">
+                        <div class="flex justify-between font-bold">
+                            <span>Venta #{{ venta.idVenta }}</span>
+                            <span>{{ venta.fechaVenta.strftime('%H:%M') }}</span>
+                        </div>
+
+                        {% for detalle in venta.detalles %}
+                        <div class="flex justify-between pl-2">
+                            <span>{{ detalle.cantidad }} x {{ detalle.tipo_galleta.nombre }}</span>
+                            <span>${{ "%.2f"|format(detalle.costoActual * detalle.cantidad) }}</span>
+                        </div>
+                        {% endfor %}
+
+                        <div class="flex justify-between border-t border-dashed mt-1 pt-1">
+                            <span class="font-bold">Total Venta:</span>
+                            <span class="font-bold">${{ venta.total }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Resumen final -->
+                <div class="border-t border-b py-2 my-2">
+                    <div class="flex justify-between">
+                        <span>Ventas Totales:</span>
+                        <span>${{ "%.2f"|format(ventas_totales) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Efectivo Recibido:</span>
+                        <span>${{ efectivo_recibido }}</span>
+                    </div>
+                    <div class="flex justify-between font-bold">
+                        <span>Diferencia:</span>
+                        <span>${{ diferencia }}</span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 text-xs">
+                    <p>Gracias por su preferencia</p>
+                    <p>www.mr_cookies.com</p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function imprimirTicket() {
+                // Crear ventana de impresión
+                const contenido = document.getElementById('ticket-content').innerHTML;
+                const ventana = window.open('', '', 'width=300,height=600');
+
+                ventana.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Ticket de Corte - MR. COOKIES</title>
+                        <style>
+                            body { 
+                                font-family: 'Courier New', monospace; 
+                                font-size: 12px; 
+                                padding: 10px;
+                                width: 80mm;
+                            }
+                            h1 { 
+                                font-size: 16px; 
+                                margin: 5px 0;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 8px;
+                            }
+                            img {
+                                height: 30px;
+                                width: 40px;
+                            }
+                            .flex { display: flex; }
+                            .justify-between { justify-content: space-between; }
+                            .border-t { border-top: 1px dashed #000; }
+                            .border-b { border-bottom: 1px dashed #000; }
+                            .border-dashed { border-style: dashed; }
+                            .py-2 { padding-top: 8px; padding-bottom: 8px; }
+                            .my-2 { margin-top: 8px; margin-bottom: 8px; }
+                            .mb-2 { margin-bottom: 8px; }
+                            .mt-1 { margin-top: 4px; }
+                            .pt-1 { padding-top: 4px; }
+                            .pl-2 { padding-left: 8px; }
+                            .font-bold { font-weight: bold; }
+                            .text-center { text-align: center; }
+                            .text-sm { font-size: 14px; }
+                            .text-xs { font-size: 10px; }
+                            @media print {
+                                body { 
+                                    margin: 0; 
+                                    padding: 5mm;
+                                    width: 80mm;
+                                }
+                                button { display: none; }
+                            }
+                        </style>
+                    </head>
+                    <body onload="window.print(); window.close()">
+                        ${contenido}
+                    </body>
+                    </html>
+                `);
+                ventana.document.close();
+            }
+        </script>
+        <!-- Columna derecha: Lista de ventas de hoy -->
+        <div class="rounded-lg border-2 p-6 overflow-y-auto max-h-[500px] flex flex-col items-center bg-tertiary">
+            <h2 class="text-center text-3xl font-bold mb-4">Ventas del día</h2>
+            {% if ventas_totales > 0 %}
+            <ul class="space-y-3 justify-center">
+                {% for venta in ventas_detalladas %}
+                <li class="border p-4 rounded shadow-sm border-2 rounded-lg p-6 bg-secondary">
+                    <p><strong>Fecha:</strong> {{ venta.fechaVenta.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>Total:</strong> ${{ venta.precioTotal }}</p>
+
+                    <div class="mt-3">
+                        <h4 class="font-semibold text-gray-700 mb-1">Detalles:</h4>
+                        <ul class="pl-4 list-disc space-y-1">
+                            {% for detalle in venta.detalles %}
+                            <li>
+                                <span class="font-medium">{{ detalle.tiposVentaNombre }}</span>: {{ detalle.nombreGalleta }} — Cantidad: {{ detalle.cantidad }}, Equivalente en piezas: {{ detalle.ventaEquivalenciaPiezas }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-center text-gray-500">No hay ventas registradas hoy.</p>
+            {% endif %}
+        </div>
+    </div>
+</main>
+{% endblock %}

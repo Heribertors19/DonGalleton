@@ -1,0 +1,28 @@
+{# templates/produccion/actualizar_estado.html #} {% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+    <h2>Actualizar Estado de Orden #{{ lote.idLoteGalleta }}</h2>
+
+    <form method="POST" action="{{ url_for('produccion.actualizar_etapa', id_lote=lote.idLoteGalleta) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+            <label class="form-label">Estado Actual:</label>
+            <p class="form-control-plaintext">{{ lote.estatus }}</p>
+        </div>
+
+        <div class="mb-3">
+            <label for="nuevo_estatus" class="form-label">Nuevo Estado:</label>
+            <select class="form-select" id="nuevo_estatus" name="nuevo_estatus" required>
+                {% for estado in estados %}
+                    <option value="{{ estado }}" {% if estado == lote.estatus %}selected{% endif %}>
+                        {{ estado }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Actualizar</button>
+        <a href="{{ url_for('produccion.ver_orden', id_lote=lote.idLoteGalleta) }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

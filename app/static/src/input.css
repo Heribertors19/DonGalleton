@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@theme {
+    --color-primary: #ffb8cc;
+    --default-font-family: "Poppins", sans-serif;
+    --color-secondary: #ffffff;
+    --color-tertiary: #edeaeb;
+    --color-dark-gray: #323132;
+    --color-red: #FA8584;
+    --color-yellow: #F1EC41;
+    --color-green: #6EF13A;
+}
+
+@layer components {
+    input {
+        @apply w-full px-4 py-2 mt-2 border border-gray-300 rounded-3xl focus: outline-none focus: ring-2 focus: ring-pink-500;
+    }
+}

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% include "header.html" %}
+
+<br><br><br>
+<div class="flex justify-between items-center mb-6">
+    <div class="w-1/2">
+        <input type="text" id="searchInput" onkeyup="filterTable()" 
+           class="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+           placeholder="Buscar usuarios...">
+    </div>
+    <a href="{{ url_for('auth.registro') }}" class="bg-primary hover:bg-pink-700 text-black px-4 py-2 text-center rounded-lg ml-4 whitespace-nowrap" style="padding-right: 2mm;">
+        <i class="fas fa-user-plus"></i> Registrar Usuario
+    </a>
+</div>
+
+
+
+<div class="min-h-screen flex items-start justify-center mt-24">
+    <div class="bg-tertiary shadow-lg rounded-xl p-6 max-w-4xl w-full">
+        <h2 class="text-3xl font-bold text-black text-center mb-6 flex items-center justify-center space-x-2">
+            <i class="fas fa-users"></i>
+            <span>Reporte de Usuarios</span>
+            <i class="fas fa-users"></i>
+        </h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-4">
+            {% for category, message in messages %}
+            <p class="text-sm text-red-500">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- Tabla de Usuarios -->
+        <div class="overflow-x-auto">
+            <table class="table-auto w-full border-collapse border border-gray-300 rounded-md" id="userTable">
+                <thead>
+                    <tr class="bg-primary text-black text-lg">
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Usuario</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Nombre</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Apellido Paterno</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Apellido Materno</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Estatus Bloqueo</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black border-r">Estatus</th>
+                        <th class="py-4 px-6 text-left border-b-2 border-black">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuario %}
+                    <tr class="border-b border-gray-300 hover:bg-pink-50 transition duration-200">
+                        <td class="py-4 px-6 border-r border-gray-300">{{ usuario.nombreUsuario }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ usuario.nombre }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ usuario.apellidoPaterno }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ usuario.apellidoMaterno }}</td>
+                        <td class="py-4 px-6 border-r border-gray-300">{{ usuario.estatus_bloqueo }}</td>
+                        <td class="py-4 px-6">{{ usuario.estatus }}</td>
+                        <td class="py-4 px-6 flex space-x-3">
+                            <a href="{{ url_for('auth.modificar_usuario', nombreUsuario=usuario.nombreUsuario) }}" class="text-black hover:text-blue-700">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('auth.desactivarU', nombreUsuario=usuario.nombreUsuario) }}" class="text-black hover:text-red-700">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+
+                            {% if usuario.estatus_bloqueo == 'ACTIVADO' %}
+                            <form action="{{ url_for('auth.desbloquear') }}" method="POST" class="inline-block">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="nombre_usuario" value="{{ usuario.nombreUsuario }}">
+                                <button type="submit" class="bg-primary hover:bg-pink-700 text-black py-2 px-3 rounded-lg">
+                                    <i class="fas fa-lock"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById('userTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            let found = false;
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j]) {
+                    const textValue = cells[j].textContent || cells[j].innerText;
+                    if (textValue.toUpperCase().indexOf(filter) > -1) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            rows[i].style.display = found ? '' : 'none';
+        }
+    }
+</script>
+
+{% endblock %}
